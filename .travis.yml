@@ -1,0 +1,12 @@
+language: cpp
+before_install:
+    - git submodule update --init --recursive
+    - sudo apt-get -qq update
+    - sudo apt-get install -y libmysqlclient-dev cmake libsqlite3-dev 
+script:
+    - mkdir build
+    - cd build
+    - cmake ..
+    - make
+    - ctest -E 'soci_.*'
+    
