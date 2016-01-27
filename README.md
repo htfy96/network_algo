@@ -1,4 +1,4 @@
-#Network Algorithm
+#Network Algorithm ![test status](https://travis-ci.org/htfy96/network_algo.svg?branch=master)
 This project is a framework of network analysis. It is designed to provide the following features:
  - Building graph from various sources(e.g MYSQL)
  - Implementation of some network algorithms.
