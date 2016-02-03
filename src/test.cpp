@@ -19,20 +19,20 @@ int main()
 {
     try
     {
-        session sql(mysql, "service=mydb user=john password=secret");
+        session sql(mysql, "host=202.120.36.137 port=7891 db=paperieee user=acemap password='xwang8'");
 
         int count;
-        sql << "select count(*) from phonebook", into(count);
+        sql << "select count(*) from paper_info", into(count);
 
         cout << "We have " << count << " entries in the phonebook.\n";
 
-        string name;
-        while (get_name(name))
+        string id;
+        while (get_name(id))
         {
             string phone;
             indicator ind;
-            sql << "select phone from phonebook where name = :name",
-                into(phone, ind), use(name);
+            sql << "select Title from paper_info where PaperID = :name",
+                into(phone, ind), use(id);
 
             if (ind == i_ok)
             {
@@ -40,7 +40,7 @@ int main()
             }
             else
             {
-                cout << "There is no phone for " << name << '\n';
+                cout << "There is no phone for " << id << '\n';
             }
         }
     }

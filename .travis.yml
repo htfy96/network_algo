@@ -8,5 +8,5 @@ script:
     - cd build
     - cmake ..
     - make
-    - ctest -E 'soci_.*'
+    - ctest -G 'soci_.*' --output-on-failure
     
