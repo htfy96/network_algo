@@ -1,3 +1,5 @@
+#ifndef GRAPH_HPP
+#define GRAPH_HPP
 #include <string>
 #include <memory>
 #include <vector>
@@ -93,3 +95,4 @@ namespace netalgo
 
             
 }
+#endif
