@@ -4,6 +4,6 @@
 [submodule "googletest"]
 	path = googletest
 	url = https://github.com/google/googletest.git
-[submodule "NanoSQL"]
-	path = NanoSQL
-	url = https://github.com/htfy96/NanoSQL.git
+[submodule "cereal"]
+	path = cereal
+	url = https://github.com/USCiLab/cereal.git

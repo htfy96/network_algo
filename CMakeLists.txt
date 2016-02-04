@@ -53,6 +53,7 @@ include_directories(soci/include)
 include_directories(include/)
 include_directories(${networkalgo_BINARY_DIR}/soci/include)
 include_directories(NanoSQL)
+include_directories(cereal/include)
 
 if (${WITH_TESTS})
 
@@ -61,7 +62,11 @@ if (${WITH_TESTS})
     add_executable(graphtest test/graphtest.cpp googletest/googletest/src/gtest_main.cc)
     target_link_libraries(graphtest gtest gtest_main soci_core soci_mysql)
 
+    add_executable(lazycachetest test/lazycachetest.cpp googletest/googletest/src/gtest_main.cc)
+    target_link_libraries(lazycachetest gtest gtest_main soci_core soci_sqlite3)
+
 # ----------------
     enable_testing()
     add_test(NAME graphtest COMMAND graphtest)
+    add_test(NAME lazycachetest COMMAND lazycachetest)
 endif(${WITH_TESTS})

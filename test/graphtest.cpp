@@ -17,6 +17,5 @@ TEST(GraphTest, nodeAddFind)
       EXPECT_EQ(size, g.nodeSize());
     }
 
-
 }
     
