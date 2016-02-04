@@ -52,6 +52,7 @@ include_directories(soci/include/soci)
 include_directories(soci/include)
 include_directories(include/)
 include_directories(${networkalgo_BINARY_DIR}/soci/include)
+include_directories(NanoSQL)
 
 if (${WITH_TESTS})
 
