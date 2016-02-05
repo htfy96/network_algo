@@ -54,12 +54,14 @@ include_directories(cereal/include)
 if (${WITH_TESTS})
 
     include_directories(googletest/googletest/include)
+    set(GTEST_SRC googletest/googletest/src/gtest_main.cc)
+    set(GTEST_LIB gtest gtest_main)
 
-    add_executable(graphtest test/graphtest.cpp googletest/googletest/src/gtest_main.cc)
-    target_link_libraries(graphtest gtest gtest_main soci_core soci_mysql)
+    add_executable(graphtest test/graphtest.cpp ${GTEST_SRC})
+    target_link_libraries(graphtest ${GTEST_LIB} soci_core soci_mysql)
 
-    add_executable(lazycachetest test/lazycachetest.cpp googletest/googletest/src/gtest_main.cc)
-    target_link_libraries(lazycachetest gtest gtest_main soci_core soci_sqlite3)
+    add_executable(lazycachetest test/lazycachetest.cpp ${GTEST_SRC})
+    target_link_libraries(lazycachetest ${GTEST_LIB} soci_core soci_sqlite3)
 
 # ----------------
     enable_testing()
