@@ -3,11 +3,18 @@ project (networkalgo)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
+set(COMMON_MINIMUM_GCC_VERSION 5.0)
+include(Compiler)
+
 find_package(MySQL)
 find_package(SQLite3 REQUIRED)
+find_package(LevelDB REQUIRED)
 
 include_directories(${MYSQL_INCLUDE_DIR})
 include_directories(${SQLITE3_INCLUDE_DIR})
+include_directories(${LEVELDB_INCLUDE})
+
+
 
 
 include(CheckCXXCompilerFlag)
