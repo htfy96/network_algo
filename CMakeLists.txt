@@ -15,8 +15,6 @@ include_directories(${SQLITE3_INCLUDE_DIR})
 include_directories(${LEVELDB_INCLUDE})
 
 
-
-
 include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
 CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
@@ -41,12 +39,14 @@ set(WITH_TESTS ON CACHE BOOL "Build tests of networkalgo(recommented)")
 
 set(CMAKE_INCLUDE_CURRENT_DIR true)
 
+set(CMAKE_CXX_FLAGS_DEBUG "-DMYDEBUG")
 add_subdirectory(${networkalgo_SOURCE_DIR}/soci)
 add_subdirectory(${networkalgo_SOURCE_DIR}/googletest)
 
 include_directories(soci/include/soci)
 include_directories(soci/include)
 include_directories(include/)
+include_directories(src/)
 include_directories(${networkalgo_BINARY_DIR}/soci/include)
 include_directories(NanoSQL)
 include_directories(cereal/include)
@@ -63,8 +63,12 @@ if (${WITH_TESTS})
     add_executable(lazycachetest test/lazycachetest.cpp ${GTEST_SRC})
     target_link_libraries(lazycachetest ${GTEST_LIB} soci_core soci_sqlite3)
 
+    add_executable(graphdsltest test/graphdsltest.cpp ${GTEST_SRC})
+    target_link_libraries(graphdsltest ${GTEST_LIB})
+
 # ----------------
     enable_testing()
     add_test(NAME graphtest COMMAND graphtest)
     add_test(NAME lazycachetest COMMAND lazycachetest)
+    add_test(NAME graphdsltest COMMAND graphdsltest)
 endif(${WITH_TESTS})
