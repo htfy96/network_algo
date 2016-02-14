@@ -39,7 +39,7 @@ set(WITH_TESTS ON CACHE BOOL "Build tests of networkalgo(recommented)")
 
 set(CMAKE_INCLUDE_CURRENT_DIR true)
 
-set(CMAKE_CXX_FLAGS_DEBUG "-DMYDEBUG")
+
 add_subdirectory(${networkalgo_SOURCE_DIR}/soci)
 add_subdirectory(${networkalgo_SOURCE_DIR}/googletest)
 
@@ -52,6 +52,7 @@ include_directories(NanoSQL)
 include_directories(cereal/include)
 
 if (${WITH_TESTS})
+    set(CMAKE_CXX_FLAGS_DEBUG "-DMYDEBUG")
 
     include_directories(googletest/googletest/include)
     set(GTEST_SRC googletest/googletest/src/gtest_main.cc)
