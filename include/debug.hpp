@@ -3,8 +3,8 @@
 
 #ifdef MYDEBUG
     #define HIDDEN hidden
-    #define protected public
-    #define private public
+    //#define protected public
+    //#define private public
 #else
     #define HIDDEN
 #endif

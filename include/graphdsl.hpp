@@ -5,6 +5,7 @@
 #include <string>
 #include <exception>
 #include <memory>
+#include "debug.hpp"
 
 /**************************************************************************************************************
  *                                          pair<> GraphSqlSentence
@@ -23,6 +24,7 @@ namespace netalgo
         Relationship relationship;
         std::string value;
     };
+    
     typedef std::vector<Property> Properties;
 
     struct NodeType
@@ -34,6 +36,7 @@ namespace netalgo
     enum EdgeDirection { prev, next, bidirection };
     struct EdgeType
     {
+        std::string id;
         EdgeDirection direction;
         Properties properties;
     };
@@ -51,13 +54,11 @@ namespace netalgo
 
     typedef std::pair<SelectSentence, ReturnSentence> GraphSqlSentence;
 
-    GraphSqlSentence parseGraphSql(const char* s, size_t size);
-
-    
+    GraphSqlSentence parseGraphSql(const char* s); 
     class GraphSqlParseException : public std::exception
     {
         protected:
-            std::unique_ptr<char> info;
+            std::unique_ptr<char[]> info;
         public:
             GraphSqlParseException();
             GraphSqlParseException(const char* inf);
@@ -69,12 +70,13 @@ namespace netalgo
     class GraphSqlParseStateException: public GraphSqlParseException
     {
         protected:
-            std::istream& state_;
+            std::string nearbyChars;
         public:
             GraphSqlParseStateException(const char* inf, std::istream& state);
+            GraphSqlParseStateException(const char* inf, const std::string& pNearbyChars);
             GraphSqlParseStateException(const GraphSqlParseStateException&) = default;
             virtual const char* what() const noexcept override;
-            std::string getNearbyChars();
+            const std::string& getNearbyChars();
             virtual ~GraphSqlParseStateException() override;
     };
 }

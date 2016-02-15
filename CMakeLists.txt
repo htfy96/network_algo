@@ -36,6 +36,7 @@ set(WITH_THREADS ON)
 
 
 set(WITH_TESTS ON CACHE BOOL "Build tests of networkalgo(recommented)")
+set(CMAKE_CXX_FLAGS_DEBUG "-g -pg -DMYDEBUG")
 
 set(CMAKE_INCLUDE_CURRENT_DIR true)
 
@@ -52,7 +53,6 @@ include_directories(NanoSQL)
 include_directories(cereal/include)
 
 if (${WITH_TESTS})
-    set(CMAKE_CXX_FLAGS_DEBUG "-DMYDEBUG")
 
     include_directories(googletest/googletest/include)
     set(GTEST_SRC googletest/googletest/src/gtest_main.cc)
@@ -64,12 +64,17 @@ if (${WITH_TESTS})
     add_executable(lazycachetest test/lazycachetest.cpp ${GTEST_SRC})
     target_link_libraries(lazycachetest ${GTEST_LIB} soci_core soci_sqlite3)
 
-    add_executable(graphdsltest test/graphdsltest.cpp ${GTEST_SRC})
-    target_link_libraries(graphdsltest ${GTEST_LIB})
+    if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
+        add_executable(graphdsltest test/graphdsltest.cpp ${GTEST_SRC})
+        target_link_libraries(graphdsltest ${GTEST_LIB})
+    endif(${CMAKE_BUILD_TYPE} MATCHES "Debug")
 
 # ----------------
     enable_testing()
     add_test(NAME graphtest COMMAND graphtest)
     add_test(NAME lazycachetest COMMAND lazycachetest)
-    add_test(NAME graphdsltest COMMAND graphdsltest)
+    if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
+        add_test(NAME graphdsltest COMMAND graphdsltest)
+    endif(${CMAKE_BUILD_TYPE} MATCHES "Debug")
+
 endif(${WITH_TESTS})
