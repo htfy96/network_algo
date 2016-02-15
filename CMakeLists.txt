@@ -64,11 +64,8 @@ if (${WITH_TESTS})
     add_executable(lazycachetest test/lazycachetest.cpp ${GTEST_SRC})
     target_link_libraries(lazycachetest ${GTEST_LIB} soci_core soci_sqlite3)
 
-    if(${CMAKE_BUILD_TYPE} MATCHES Debug)
-        message(STATUS "Debug mode is enabled")
-        add_executable(graphdsltest test/graphdsltest.cpp ${GTEST_SRC})
-        target_link_libraries(graphdsltest ${GTEST_LIB})
-    endif(${CMAKE_BUILD_TYPE} MATCHES Debug)
+    add_executable(graphdsltest test/graphdsltest.cpp ${GTEST_SRC})
+    target_link_libraries(graphdsltest ${GTEST_LIB})
 
 # ----------------
     enable_testing()
