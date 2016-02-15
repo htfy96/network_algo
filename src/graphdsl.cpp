@@ -60,7 +60,12 @@ namespace HIDDEN
             return type == other.type && raw == other.raw;
         }
         token(const TokenType& t, const string s): type(t), raw(std::move(s)) {}
+        friend ostream& operator<<(ostream&, const token&);
     };
+    ostream& operator<<(ostream& o, const token& t)
+    {
+        return o<<t.type<<" "<<t.raw;
+    }
 
     //helpers of parser
     istream& eatWhite(istream& is)
@@ -111,7 +116,7 @@ namespace HIDDEN
         string result; result.push_back(lookahead);
         while (char c = is.get())
         {
-            if (!isalpha(c) && c!='_')
+            if (!isalnum(c) && c!='_')
             {
                 is.unget();
                 break;
@@ -166,6 +171,8 @@ namespace HIDDEN
                 break;
             default:
                 is.unget();
+                if (lookahead == '+' || lookahead == '-' || isdigit(lookahead))
+                  return {token::number, getNumber(is)};
                 string identifier = getIdentifier(is);
                 for(size_t i = 0; i < arrayLen(KEYWORD_TABLE); ++i)
                   if (identifier == KEYWORD_TABLE[i])
