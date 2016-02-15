@@ -14,6 +14,7 @@ namespace HIDDEN
     using namespace netalgo;
     using namespace std;
     static const size_t BUFLEN=300;
+    static const size_t CONTEXT_LEN=30;
 
     GraphSqlSentence parseGraphSqlImpl(const char* s, size_t size)
     {
@@ -217,9 +218,9 @@ namespace netalgo
     std::string GraphSqlParseStateException::getNearbyChars()
     {
         std::istream::pos_type pos = state_.tellg();
-        state_.seekg(std::min(pos, std::streampos(10)), std::istream::cur);
+        state_.seekg(-std::min(pos, std::streampos(10)), std::istream::cur);
         char buffer[HIDDEN::BUFLEN];
-        state_.readsome(buffer, HIDDEN::BUFLEN);
+        state_.readsome(buffer, HIDDEN::CONTEXT_LEN);
         return std::string(buffer);
     }
     

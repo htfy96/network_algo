@@ -25,8 +25,8 @@ TEST(GraphDSLTest, InvalidTokenTest)
         token t = getToken(is);
     } catch(netalgo::GraphSqlParseStateException& e)
     {
-        SUCCEED();
-        cout << e.what() << e.getNearbyChars() << endl;
+        EXPECT_STREQ(e.what(), "The first character of identifier should be a letter or : or _");
+        EXPECT_EQ(e.getNearbyChars(), "a^b\xff");
     }
     
 }
