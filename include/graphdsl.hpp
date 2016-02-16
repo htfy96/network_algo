@@ -54,7 +54,7 @@ namespace netalgo
 
     typedef std::pair<SelectSentence, ReturnSentence> GraphSqlSentence;
 
-    GraphSqlSentence parseGraphSql(const char* s); 
+    const GraphSqlSentence& parseGraphSql(const char* s); 
     class GraphSqlParseException : public std::exception
     {
         protected:
@@ -82,7 +82,7 @@ namespace netalgo
 }
 
 
-netalgo::GraphSqlSentence operator""_graphsql(const char*, size_t);
+const netalgo::GraphSqlSentence& operator""_graphsql(const char*, size_t);
 
 #endif
 

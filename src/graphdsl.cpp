@@ -217,10 +217,10 @@ namespace HIDDEN
                     {
                         char c = is.get();
                         if (c=='\\')
-                          if (!is.eof())
-                            tmp.push_back(is.get());
-                          else
-                            throw GraphSqlParseStateException("Non-terminate string", is);
+                            if (!is.eof())
+                                tmp.push_back(is.get());
+                            else
+                                throw GraphSqlParseStateException("Non-terminate string", is);
                         else
                         {
                             tmp.push_back(c);
@@ -232,11 +232,11 @@ namespace HIDDEN
             default:
                 is.unget();
                 if (lookahead == '+' || lookahead == '-' || isdigit(lookahead))
-                  return {token::number, getNumber(is)};
+                    return {token::number, getNumber(is)};
                 string identifier = getIdentifier(is);
                 for(size_t i = 0; i < arrayLen(KEYWORD_TABLE); ++i)
-                  if (strLower(identifier) == KEYWORD_TABLE[i])
-                    return {token::keyword, KEYWORD_TABLE[i]};
+                    if (strLower(identifier) == KEYWORD_TABLE[i])
+                        return {token::keyword, KEYWORD_TABLE[i]};
                 return {token::identifier, identifier};
 
         };
@@ -517,14 +517,14 @@ namespace netalgo
 
     //GraphSqlSentenceParse
 
-    GraphSqlSentence parseGraphSql(const char* s)
+    const GraphSqlSentence& parseGraphSql(const char* s)
     {
         return HIDDEN::GraphSqlManager::getParsedSentence(s);
     }
 
 }
 
-netalgo::GraphSqlSentence operator""_graphsql(const char* s, size_t size)
+const netalgo::GraphSqlSentence& operator""_graphsql(const char* s, size_t size)
 {
     assert(size == std::strlen(s));
     return netalgo::parseGraphSql(s);
