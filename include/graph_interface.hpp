@@ -18,12 +18,12 @@ class GraphInterface
         template<typename U>
             static std::false_type sfinae_checkid(bool, U NodeType::* = &NodeType::id) {}
         static std::true_type sfinae_checkid(int) {}
-        static_assert(decltype(sfinae_checkid(0))::type, "NodeType must contain member id");
+        static_assert(decltype(sfinae_checkid(0))::value, "NodeType must contain member id");
 
         template<typename U>
             static std::false_type sfinae_checkedge(bool, U EdgeType::* = &EdgeType::id) {}
         static std::true_type sfinae_checkedge(int) {}
-        static_assert(decltype(sfinae_checkedge(0))::type, "EdgeType must contain member id");
+        static_assert(decltype(sfinae_checkedge(0))::value, "EdgeType must contain member id");
 
     public:
         GraphInterface();
