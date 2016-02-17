@@ -236,7 +236,6 @@ namespace netalgo
         void LevelDbGraph<NodeType, EdgeType>::destroy()
         {
             leveldb::DestroyDB(filename_, leveldb::Options());
-            db = nullptr;
         }
 
     template<typename NodeType, typename EdgeType>
@@ -342,8 +341,8 @@ namespace netalgo
     template<typename NodeType, typename EdgeType>
         void LevelDbGraph<NodeType, EdgeType>::removeNode(const NodeIdType& nodeId)
         {
-            std::string raw;
-            leveldb::Status status;
+            static std::string raw;
+            static leveldb::Status status;
             leveldb::WriteBatch batch;
 
             status = db->Delete(leveldb::WriteOptions(), addSuffix(nodeId, nodeDataIdSuffix));
@@ -427,6 +426,7 @@ namespace netalgo
                 {
                     status = db->Write(leveldb::WriteOptions(), batch);
                     assert(status.ok());
+                    delete batch;
                 }
             }
         }

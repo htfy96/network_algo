@@ -46,10 +46,11 @@ TEST(LevelDbGraphTest, LevelDbGraphSpeedTest)
     options.block_cache= leveldb::NewLRUCache(1024*1024*32);
 
     auto t = chrono::high_resolution_clock::now();
+    auto start = t;
     LevelDbGraph<Node, Edge> g("zzz.db");
 
     int count = 0;
-    for (int i=0; i<100000; ++i)
+    for (int i=0; i<10000; ++i)
     {
         ++count;
         if (!(count % 100))
@@ -61,6 +62,8 @@ TEST(LevelDbGraphTest, LevelDbGraphSpeedTest)
                 cout << count << endl;
                 count = 0;
             }
+            if (chrono::duration_cast<chrono::seconds>(tt-start).count() > 10)
+                break;
         }
 
         Node n;
@@ -71,18 +74,53 @@ TEST(LevelDbGraphTest, LevelDbGraphSpeedTest)
         m.set_id("B");
         m.set_imp(6.666);
 
+        Node c;
+        c.set_id("C");
+        c.set_imp(6.666);
+
+        Node d;
+        d.set_id("D");
+        d.set_imp(6.666);
+
         Edge e;
         e.set_id("E");
         e.set_from("A");
         e.set_to("B");
 
-        g.setNode(n);
-        g.setNode(m);
-        g.setEdge(e);
-        g.removeEdge("E");
+        Edge e2;
+        e2.set_id("E2");
+        e2.set_from("C");
+        e2.set_to("D");
+
+        Edge e3;
+        e3.set_id("E3");
+        e3.set_from("D");
+        e3.set_to("A");
+
+        Edge e4;
+        e4.set_id("E4");
+        e4.set_from("C");
+        e4.set_to("A");
+
+        for (int j=0; j<3; ++j)
+        {
+            g.setNode(n);
+            g.setNode(m);
+            g.setNode(c);
+            g.setNode(d);
+            g.setEdge(e);
+            g.setEdge(e2);
+            g.setEdge(e3);
+            g.setEdge(e4);
+        }
+
+        g.removeEdge("E2");
         g.removeNode("A");
         g.removeNode("B");
+        g.removeNode("C");
+        g.removeNode("D");
     }
     g.destroy();
+    delete options.block_cache;
 
 }
