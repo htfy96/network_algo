@@ -1,0 +1,12 @@
+message Node
+{
+    required string id = 1;
+    required double imp = 2;
+}
+
+message Edge
+{
+    required string id = 1;
+    required string from = 2;
+    required string to = 3;
+}

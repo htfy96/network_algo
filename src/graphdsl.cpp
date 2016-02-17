@@ -344,7 +344,7 @@ namespace HIDDEN
     {
         getNextWithType<token::dash>(tokenQueue);
         if (tokenQueue.empty() || tokenQueue.front().type != token::greater)
-          return false;
+            return false;
 
         tokenQueue.pop_front();
         return true;
@@ -364,7 +364,7 @@ namespace HIDDEN
             leftDir = true;
         }
         else
-          throw EdgeNotFoundException();
+            throw EdgeNotFoundException();
 
         //--[>] or -[props]-[>]
 
@@ -393,18 +393,29 @@ namespace HIDDEN
         }
 
         if (leftDir)
-          if (rightDir)
-            throw GraphSqlParseException("<--> is not allowed");
-          else
-            result.direction = EdgeDirection::prev;
+            if (rightDir)
+                throw GraphSqlParseException("<--> is not allowed");
+            else
+                result.direction = EdgeDirection::prev;
         else if (rightDir)
-          result.direction = EdgeDirection::next;
+            result.direction = EdgeDirection::next;
         else
-          result.direction = EdgeDirection::bidirection;
+            result.direction = EdgeDirection::bidirection;
 
         return result;
     }
 
+    bool isValidIdentifier(const SelectSentence& ss, const string& identifier)
+    {
+        if (identifier == "") return false;
+        for(auto& node : ss.nodes)
+            if (node.id == identifier)
+                return true;
+        for(auto& edge : ss.edges)
+            if (edge.id == identifier)
+                return true;
+        return false;
+    }
 
     GraphSqlSentence parseGraphSqlImpl(const char* c)
     {
@@ -412,19 +423,21 @@ namespace HIDDEN
         deque<token> tokenQueue;
         for(token t = getToken(is); t.type!=token::eof; t=getToken(is))
             tokenQueue.push_back(t);
-        #ifdef MYDEBUG
+#ifdef MYDEBUG
         int cnt = 0;
         for (auto &s:tokenQueue)
         {
-          cout << cnt << "."<<s.raw<<" "<<s.type << endl;
-          ++cnt;
+            cout << cnt << "."<<s.raw<<" "<<s.type << endl;
+            ++cnt;
         }
-        #endif
+#endif
 
         GraphSqlSentence result;
 
         if (tokenQueue.front() != token( token::keyword, "select" ))
-            throw GraphSqlParseStateException("the first token must be select", is);
+            throw GraphSqlParseStateException(
+                        "the first token must be select",
+                        tokenQueue.front().raw);
         tokenQueue.pop_front();
 
         result.first.nodes.push_back(getNode(tokenQueue));
@@ -442,12 +455,16 @@ namespace HIDDEN
         }
 
         if (tokenQueue.front() != token(token::keyword, "return"))
-          throw GraphSqlParseStateException("return doesn't appear in place", is);
+            throw GraphSqlParseStateException(
+                        "return doesn't appear in place",
+                        tokenQueue.front().raw);
         tokenQueue.pop_front();
 
         token first = tokenQueue.front();
         if (first.type != token::identifier)
-          throw GraphSqlParseStateException("only identifier could appear in return sentence", is);
+            throw GraphSqlParseStateException(
+                        "only identifier could appear in return sentence",
+                        first.raw);
         result.second.returnName.push_back(first.raw);
         tokenQueue.pop_front();
 
@@ -455,6 +472,11 @@ namespace HIDDEN
         {
             getNextWithType<token::comma>(tokenQueue);
             result.second.returnName.push_back(getNextWithType<token::identifier>(tokenQueue).raw);
+            if (!isValidIdentifier(result.first,
+                            *result.second.returnName.rbegin()))
+                throw GraphSqlParseStateException(
+                            "Only node or edge id could appear in return sentence",
+                            *result.second.returnName.rbegin());
         }
         return result;
     }
