@@ -85,7 +85,7 @@ if (${WITH_TESTS})
 # ----------------
     enable_testing()
     add_test(NAME graphtest COMMAND graphtest)
-    add_test(NAME lazycachetest COMMAND lazycachetest)
+    #add_test(NAME lazycachetest COMMAND lazycachetest)
     add_test(NAME graph_interfacetest COMMAND graph_interfacetest)
     add_test(NAME leveldbgraphtest COMMAND leveldbgraphtest)
     if (${CMAKE_BUILD_TYPE} MATCHES "Debug")

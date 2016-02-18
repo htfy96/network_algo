@@ -24,7 +24,7 @@ namespace
         for(char& c: s)
             c = std::tolower(c);
 #ifdef MYDEBUG
-        std::cout << s << std::endl;
+        //std::cout << s << std::endl;
 #endif
         return s;
     }

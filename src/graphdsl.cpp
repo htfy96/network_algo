@@ -424,12 +424,12 @@ namespace HIDDEN
         for(token t = getToken(is); t.type!=token::eof; t=getToken(is))
             tokenQueue.push_back(t);
 #ifdef MYDEBUG
-        int cnt = 0;
-        for (auto &s:tokenQueue)
-        {
-            cout << cnt << "."<<s.raw<<" "<<s.type << endl;
-            ++cnt;
-        }
+        //int cnt = 0;
+        //for (auto &s:tokenQueue)
+        //{
+            //cout << cnt << "."<<s.raw<<" "<<s.type << endl;
+            //++cnt;
+        //}
 #endif
 
         GraphSqlSentence result;

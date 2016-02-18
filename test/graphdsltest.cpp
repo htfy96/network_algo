@@ -3,6 +3,7 @@
 #include <iostream>
 #include <utility>
 #include <sstream>
+#include <chrono>
 #include "graphdsl.cpp"
 using namespace std;
 
@@ -83,4 +84,31 @@ TEST(GraphDSLTest, SentenceTest1)
     EXPECT_EQ(1ul, ret.returnName.size());
     EXPECT_EQ("a", *ret.returnName.begin());
 
+}
+
+TEST(GraphDSLTest, SenteceSpeedTest)
+{
+    using namespace HIDDEN;
+    using namespace netalgo;
+    auto t = chrono::high_resolution_clock::now();
+    auto start = t;
+
+    int count = 0;
+    for (;;)
+    {
+        ++count;
+        if (!(count % 100))
+        {
+            auto tt = chrono::high_resolution_clock::now();
+            if (chrono::duration_cast<chrono::milliseconds>(tt-t).count()>1000)
+            {
+                t = tt;
+                cout << count << endl;
+                count = 0;
+            }
+            if (chrono::duration_cast<chrono::seconds>(tt-start).count() > 10)
+                break;
+        }
+        GraphSqlSentence s = parseGraphSqlImpl( "select (a len>3)--(len=2) return a");
+    }
 }
