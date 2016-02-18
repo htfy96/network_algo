@@ -10,12 +10,14 @@ find_package(MySQL)
 find_package(SQLite3 REQUIRED)
 find_package(LevelDB REQUIRED)
 find_package(Protobuf REQUIRED)
+find_package(snappy REQUIRED)
 
 include_directories(${MYSQL_INCLUDE_DIR})
 include_directories(${SQLITE3_INCLUDE_DIR})
 include_directories(${LEVELDB_INCLUDE})
 include_directories(${PROTOBUF_INCLUDE_DIRS})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
+include_directories(${snappy_INCLUDE_DIRS})
 
 
 include(CheckCXXCompilerFlag)
@@ -72,7 +74,7 @@ if (${WITH_TESTS})
 
     protobuf_generate_cpp(LDGTESTPROTO_SRCS LDGTESTPROTO_HDRS test/leveldbgraphtest.proto)
     add_executable(leveldbgraphtest test/leveldbgraphtest.cpp ${GTEST_SRC} ${LDGTESTPROTO_SRCS} ${LDGTESTPROTO_HDRS})
-    target_link_libraries(leveldbgraphtest ${PROTOBUF_LIBRARIES} ${GTEST_LIB} ${LEVELDB_LIBS})
+    target_link_libraries(leveldbgraphtest ${PROTOBUF_LIBRARIES} ${GTEST_LIB} ${LEVELDB_LIBS} ${snappy_LIBRARIES})
 
     if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
         add_executable(graphdsltest test/graphdsltest.cpp ${GTEST_SRC})
