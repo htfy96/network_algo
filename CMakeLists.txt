@@ -20,6 +20,9 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${snappy_INCLUDE_DIRS})
 
 
+set(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wextra -Wno-error -O0 -g -DMYDEBUG -Wno-maybe-uninitialized -Wno-return-type -Wno-reorder")
+set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wno-error -O2 -Wno-maybe-uninitialized -Wno-return-type -Wno-reorder")
+
 include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
 CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
@@ -31,6 +34,7 @@ else()
     message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
 endif()
 
+message(STATUS "Build flags: ${CMAKE_CXX_FLAGS}")
 # configuration for soci
 set(SOCI_STATIC ON CACHE BOOL "Build static")
 set(SOCI_TESTS OFF CACHE BOOL "Build soci tests(would fail if you don't have all databases built" FORCE)
@@ -38,10 +42,7 @@ set(SOCI_TESTS OFF CACHE BOOL "Build soci tests(would fail if you don't have all
 set(SOCI_CXX_C11 ON)
 set(WITH_THREADS ON)
 
-
-
 set(WITH_TESTS ON CACHE BOOL "Build tests of networkalgo(recommented)")
-set(CMAKE_CXX_FLAGS_DEBUG "-g -pg -DMYDEBUG")
 
 set(CMAKE_INCLUDE_CURRENT_DIR true)
 
@@ -66,8 +67,8 @@ if (${WITH_TESTS})
     add_executable(graphtest test/graphtest.cpp ${GTEST_SRC})
     target_link_libraries(graphtest ${GTEST_LIB} soci_core soci_mysql)
 
-    add_executable(lazycachetest test/lazycachetest.cpp ${GTEST_SRC})
-    target_link_libraries(lazycachetest ${GTEST_LIB} soci_core soci_sqlite3)
+    #add_executable(lazycachetest test/lazycachetest.cpp ${GTEST_SRC})
+    #target_link_libraries(lazycachetest ${GTEST_LIB} soci_core soci_sqlite3)
 
     add_executable(graph_interfacetest test/graph_interfacetest.cpp ${GTEST_SRC})
     target_link_libraries(graph_interfacetest ${GTEST_LIB})

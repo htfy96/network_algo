@@ -2,6 +2,7 @@
 #define BACKEND_LEVELDBGRAPH_HPP
 
 #include "graph_interface.hpp"
+#include "utility.hpp"
 
 #include <leveldb/db.h>
 #include <leveldb/write_batch.h>
@@ -29,7 +30,8 @@
 #include <memory>
 #include <cstring>
 #include <iterator>
-#include <set>
+#include <vector>
+#include <algorithm>
 
 namespace
 {
@@ -170,7 +172,6 @@ namespace netalgo
                         const std::string>::value, "EdgeType.from() must be string");
             static_assert(std::is_convertible<decltype(std::declval<EdgeType>().to()),
                         const std::string>::value, "EdgeType.to() must be string");
-
         protected:
             leveldb::DB* db;
             const std::string filename_;
@@ -203,6 +204,17 @@ namespace netalgo
             void removeEdgeImpl(const EdgeIdType& edgeId,
                         bool updateFromNode,
                         bool updateToNode, leveldb::WriteBatch* batch = nullptr);
+            static const std::size_t edgeCacheSize = 1024 * 1024;
+
+            typedef std::set<EdgeIdType> inoutEdgesType;
+            inoutEdgesType getInEdge(const NodeIdType& nodeId);
+            inoutEdgesType getOutEdge(const NodeIdType& nodeId);
+            void setInEdge(const NodeIdType& nodeId, inoutEdgesType inEdges,
+                        leveldb::WriteBatch *batch = nullptr);
+            void setOutEdge(const NodeIdType& nodeId, inoutEdgesType outEdges,
+                        leveldb::WriteBatch *batch = nullptr);
+        private:
+            TypedLRUMap<NodeIdType, inoutEdgesType > outEdgeCache, inEdgeCache;
 
     };
 
@@ -213,7 +225,8 @@ namespace netalgo
 
     template<typename NodeType, typename EdgeType>
         LevelDbGraph<NodeType, EdgeType>::LevelDbGraph(const std::string& filename,
-                    leveldb::Options options): filename_(filename)
+                    leveldb::Options options): filename_(filename), inEdgeCache(edgeCacheSize),
+        outEdgeCache(edgeCacheSize)
         {
             options.create_if_missing = true;
             leveldb::Status status = leveldb::DB::Open(options,
@@ -237,6 +250,84 @@ namespace netalgo
         {
             leveldb::DestroyDB(filename_, leveldb::Options());
         }
+
+    template<typename NodeType, typename EdgeType>
+        typename LevelDbGraph<NodeType, EdgeType>::inoutEdgesType
+        LevelDbGraph<NodeType, EdgeType>::getInEdge(const NodeIdType& nodeId)
+        {
+            auto result = inEdgeCache.find(nodeId);
+            if (result != inEdgeCache.end())
+                return result->second;
+            else
+            {
+                leveldb::Status status;
+                static std::string raw;
+                status = db->Get(leveldb::ReadOptions(), addSuffix(nodeId, inEdgeSuffix), &raw);
+                assert(status.ok() || status.IsNotFound());
+                if (status.ok())
+                    return strToDataByCereal< inoutEdgesType >(raw);
+                else
+                    return inoutEdgesType();
+            }
+        }
+
+    template<typename NodeType, typename EdgeType>
+        typename LevelDbGraph<NodeType, EdgeType>::inoutEdgesType
+        LevelDbGraph<NodeType, EdgeType>::getOutEdge(const NodeIdType& nodeId)
+        {
+            auto result = outEdgeCache.find(nodeId);
+            if (result != outEdgeCache.end())
+                return result->second;
+            else
+            {
+                leveldb::Status status;
+                static std::string raw;
+                status = db->Get(leveldb::ReadOptions(), addSuffix(nodeId, outEdgeSuffix), &raw);
+                if (status.ok())
+                    return strToDataByCereal< inoutEdgesType >(raw);
+                else
+                    return inoutEdgesType();
+            }
+        }
+
+    template<typename NodeType, typename EdgeType>
+        void LevelDbGraph<NodeType, EdgeType>::setInEdge(const NodeIdType& nodeId,
+                    inoutEdgesType inEdges, leveldb::WriteBatch *batch)
+        {
+            stringStreamSlice slice = dataToSliceByCereal(inEdges);
+            if (batch == nullptr)
+            {
+                leveldb::Status status = db->Put(leveldb::WriteOptions(), addSuffix(nodeId, inEdgeSuffix),
+                            slice.getSlice());
+                assert(status.ok());
+            }
+            else
+            {
+                batch->Put(addSuffix(nodeId, inEdgeSuffix), slice.getSlice());
+            }
+
+            inEdgeCache[nodeId] = std::move(inEdges);
+        }
+
+    template<typename NodeType, typename EdgeType>
+        void LevelDbGraph<NodeType, EdgeType>::setOutEdge(const NodeIdType& nodeId,
+                    inoutEdgesType outEdges, leveldb::WriteBatch *batch)
+        {
+            stringStreamSlice slice = dataToSliceByCereal(outEdges);
+            if (batch == nullptr)
+            {
+                leveldb::Status status = db->Put(leveldb::WriteOptions(), addSuffix(nodeId, outEdgeSuffix),
+                            slice.getSlice());
+                assert(status.ok());
+            }
+            else
+            {
+                batch->Put(addSuffix(nodeId, outEdgeSuffix), slice.getSlice());
+            }
+
+            outEdgeCache[nodeId] = std::move(outEdges);
+        }
+
 
     template<typename NodeType, typename EdgeType>
         void LevelDbGraph<NodeType, EdgeType>::setNode(const NodeType& node)
@@ -269,31 +360,25 @@ namespace netalgo
 
             std::string raw;
             leveldb::Status status;
+            leveldb::WriteBatch batch;
 
             // deal with outedge
-            status = db->Get(leveldb::ReadOptions(), addSuffix(from, outEdgeSuffix), &raw);
-            std::set<EdgeIdType> outSet;
-            if (status.ok())
-                outSet = strToDataByCereal< std::set<EdgeIdType> >(raw);
+            inoutEdgesType outSet = getOutEdge(from);
             outSet.insert(id);
-            stringStreamSlice result = dataToSliceByCereal(outSet);
-            db->Put(leveldb::WriteOptions(), addSuffix(from, outEdgeSuffix), result.getSlice());
+            setOutEdge(from, std::move(outSet), &batch);
+
 
             //deal with inedge
-            status = db->Get(leveldb::ReadOptions(), addSuffix(to, inEdgeSuffix), &raw);
-            std::set<EdgeIdType> inSet;
-            if (status.ok())
-                inSet = strToDataByCereal< std::set<EdgeIdType> >(raw);
+            inoutEdgesType inSet = getInEdge(to);
             inSet.insert(id);
-            result = dataToSliceByCereal(inSet);
-            db->Put(leveldb::WriteOptions(), addSuffix(to, inEdgeSuffix), result.getSlice());
+            setInEdge(to, std::move(inSet), &batch);
 
             //save the edge
             stringSlice resultproto = dataToSliceByProtobuf(edge);
-            status = db->Put(leveldb::WriteOptions(), addSuffix(id, edgeDataIdSuffix), resultproto.getSlice());
+            batch.Put(addSuffix(id, edgeDataIdSuffix), resultproto.getSlice());
 
+            status = db->Write(leveldb::WriteOptions(), &batch);
             assert(status.ok());
-                
         }
 
     template<typename NodeType, typename EdgeType>
@@ -313,27 +398,16 @@ namespace netalgo
             //deal with outEdge
             for(auto& e : eb)
             {
-                status = db->Get(leveldb::ReadOptions(), addSuffix(e.from(), outEdgeSuffix), &raw);
-                std::set<EdgeIdType> outSet;
-                if (status.ok())
-                    outSet = strToDataByCereal< std::set<EdgeIdType> >(raw);
+                inoutEdgesType outSet = getOutEdge(e.from());
                 outSet.insert(e.id());
-                auto newSlice = dataToSliceByCereal(outSet);
-                batch.Put(addSuffix(e.from(), outEdgeSuffix), newSlice.getSlice());
-            }
+                setOutEdge(e.from(), std::move(outSet), &batch);
 
-            //deal with inEdge
-            for(auto& e : eb)
-            {
-                status = db->Get(leveldb::ReadOptions(), addSuffix(e.to(), inEdgeSuffix), &raw);
-                std::set<EdgeIdType> inSet;
-                if (status.ok())
-                    inSet = strToDataByCereal< std::set<EdgeIdType> >(raw);
+                inoutEdgesType inSet = getInEdge(e.to());
                 inSet.insert(e.id());
-                auto newSlice = dataToSliceByCereal(inSet);
-                batch.Put(addSuffix(e.to(), inEdgeSuffix), newSlice.getSlice());
+                setInEdge(e.to(), std::move(inSet), &batch);
             }
 
+            
             status = db->Write(leveldb::WriteOptions(), &batch);
             assert(status.ok());
         }
@@ -348,17 +422,11 @@ namespace netalgo
             status = db->Delete(leveldb::WriteOptions(), addSuffix(nodeId, nodeDataIdSuffix));
             assert(status.ok());
     
-            std::set<EdgeIdType> inSet;
-            status = db->Get(leveldb::ReadOptions(), addSuffix(nodeId, inEdgeSuffix), &raw);
-            if (!status.IsNotFound())
-                inSet = strToDataByCereal< std::set<EdgeIdType> >(raw);
+            inoutEdgesType inSet = getInEdge(nodeId);
             for (auto& edgeId : inSet)
                 removeEdgeImpl(edgeId, false, true, &batch);
 
-            std::set<EdgeIdType> outSet;
-            status = db->Get(leveldb::ReadOptions(), addSuffix(nodeId, outEdgeSuffix), &raw);
-            if (!status.IsNotFound())
-                outSet = strToDataByCereal< std::set<EdgeIdType> >(raw);
+            inoutEdgesType outSet = getOutEdge(nodeId);
             for (auto& edgeId : outSet)
                 removeEdgeImpl(edgeId, true, false, &batch);
 
@@ -402,24 +470,15 @@ namespace netalgo
                 
                 if (updateFromNode)
                 {
-                    status = db->Get(leveldb::ReadOptions(), addSuffix(edge.from(), outEdgeSuffix), &raw);
-                    assert(status.ok());
-
-                    std::set<EdgeIdType> outEdge = strToDataByCereal< std::set<EdgeIdType> >(raw);
-                    assert(outEdge.find(edgeId) != outEdge.end());
-                    outEdge.erase(edgeId);
-                    auto slice = dataToSliceByCereal(outEdge);
-                    batch->Put(addSuffix(edge.from(), outEdgeSuffix), slice.getSlice());
+                    inoutEdgesType outEdges = getOutEdge(edge.from());
+                    outEdges.erase(edgeId);
+                    setOutEdge(edge.from(), std::move(outEdges), batch);
                 }
                 if (updateToNode)
                 {
-                    status = db->Get(leveldb::ReadOptions(), addSuffix(edge.to(), inEdgeSuffix), &raw);
-                    assert(status.ok());
-                    std::set<EdgeIdType> inEdge = strToDataByCereal< std::set<EdgeIdType> >(raw);
-                    assert(inEdge.find(edgeId) != inEdge.end());
-                    inEdge.erase(edgeId);
-                    auto slice = dataToSliceByCereal(inEdge);
-                    batch->Put(addSuffix(edge.to(), inEdgeSuffix), slice.getSlice());
+                    inoutEdgesType inEdges = getInEdge(edge.to());
+                    inEdges.erase(edgeId);
+                    setInEdge(edge.to(), std::move(inEdges), batch);
                 }
 
                 if (autoCommit)

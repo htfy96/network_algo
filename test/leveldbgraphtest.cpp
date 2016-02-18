@@ -46,11 +46,11 @@ TEST(LevelDbGraphTest, LevelDbGraphSpeedTest)
     options.block_cache= leveldb::NewLRUCache(1024*1024*32);
 
     auto t = chrono::high_resolution_clock::now();
-    auto start = t;
     LevelDbGraph<Node, Edge> g("zzz.db");
+    auto start = t;
 
     int count = 0;
-    for (int i=0; i<10000; ++i)
+    for (;;)
     {
         ++count;
         if (!(count % 100))
