@@ -1,5 +1,5 @@
-#ifndef GRAPH_TYPEDLRUMAP_HPP
-#define GRAPH_TYPEDLRUMAP_HPP
+#ifndef GRAPH_TYPEDMRUMAP_HPP
+#define GRAPH_TYPEDMRUMAP_HPP
 
 #include <map>
 #include <cstddef>
@@ -7,14 +7,44 @@
 #include <unordered_map>
 #include <iterator>
 #include <utility>
+#include <type_traits>
 
 namespace
 {
+
+    template<typename T, typename U = decltype(std::declval<T>().capacity())>
+        std::size_t getSize_impl(const T& value, char)
+        // exact match(level 1)
+        {
+            return value.capacity();
+        }
+
+    template<typename T, typename U = decltype(std::declval<T>().size())>
+        std::size_t getSize_impl(const T& value, int)
+        // char to int is promotion(level 2)
+        {
+            return value.size();
+        }
+
+    template<typename T>
+        std::size_t getSize_impl(const T& value, bool)
+        // char to bool is conversion(level 3)
+        {
+            (void)(value); //eliminate warning
+            return 1;
+        }
+
+    template<typename T>
+        std::size_t getSize(const T& value)
+        {
+            return getSize_impl(value, char(0));
+        }
+
     template<typename KeyT, typename ValueT>
-        class TypedLRUMap
+        class TypedMRUMap
         {
             protected:
-                const std::size_t max_entry_;
+                const std::size_t max_objectSize_;
                 typedef std::unordered_map<KeyT, ValueT> mapT;
                 typedef std::map<std::size_t, KeyT> lastUsedTimeRevT;
                 typedef std::map<KeyT, std::size_t> lastUsedTimeT;
@@ -22,13 +52,15 @@ namespace
                 lastUsedTimeT lastUsedTime_;
                 lastUsedTimeRevT lastUsedTimeRev_;
                 std::size_t timestamp;
+                std::size_t objectSize;
                 static const std::size_t numberClearAtOnce = 10;
             public:
-                TypedLRUMap(const size_t max_entry): max_entry_(max_entry), timestamp(0) {}
-                TypedLRUMap(const TypedLRUMap&) = default;
-                TypedLRUMap(TypedLRUMap&&) = default;
-                TypedLRUMap& operator=(const TypedLRUMap&) = default;
-                ~TypedLRUMap() = default;
+                TypedMRUMap(const size_t max_objectSize): max_objectSize_(max_objectSize), timestamp(0),
+                objectSize(0) {}
+                TypedMRUMap(const TypedMRUMap&) = default;
+                TypedMRUMap(TypedMRUMap&&) = default;
+                TypedMRUMap& operator=(const TypedMRUMap&) = default;
+                ~TypedMRUMap() = default;
 
                 typedef typename mapT::iterator iterator;
                 typedef typename mapT::const_iterator const_iterator;
@@ -57,7 +89,7 @@ namespace
                 }
 
                 std::pair<typename mapT::iterator, bool>
-                    insert(typename mapT::value_type value)
+                    insert(typename mapT::value_type value) //should be exception safe
                     {
                         auto result = map_.insert(std::move(value));
                         ++timestamp;
@@ -68,7 +100,7 @@ namespace
                                 lastUsedTimeRev_.insert(std::make_pair(timestamp, value.first));
                                 try
                                 {
-                                    lastUsedTime_.insert(make_pair(value.first, timestamp));
+                                    lastUsedTime_.insert(std::make_pair(value.first, timestamp));
                                 } catch(...)
                                 {
                                     lastUsedTimeRev_.erase(timestamp);
@@ -80,7 +112,8 @@ namespace
                             map_.erase(result.first);
                             throw;
                         }
-                        if (map_.size() > max_entry_)
+                        objectSize += getSize(value);
+                        if (objectSize > max_objectSize_)
                             clearNotUsedCache();
                         return result;
                     }

@@ -3,7 +3,7 @@
 
 #include "graph_interface.hpp"
 #include "utility.hpp"
-#include "typedlrumap.hpp"
+#include "typedmrumap.hpp"
 
 #include <leveldb/db.h>
 #include <leveldb/write_batch.h>
@@ -215,7 +215,7 @@ namespace netalgo
             void setOutEdge(const NodeIdType& nodeId, inoutEdgesType outEdges,
                         leveldb::WriteBatch *batch = nullptr);
         private:
-            TypedLRUMap<NodeIdType, inoutEdgesType > outEdgeCache, inEdgeCache;
+            TypedMRUMap<NodeIdType, inoutEdgesType > outEdgeCache, inEdgeCache;
 
     };
 
