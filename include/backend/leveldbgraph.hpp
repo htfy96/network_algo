@@ -3,6 +3,7 @@
 
 #include "graph_interface.hpp"
 #include "utility.hpp"
+#include "typedlrumap.hpp"
 
 #include <leveldb/db.h>
 #include <leveldb/write_batch.h>

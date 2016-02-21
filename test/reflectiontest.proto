@@ -1,0 +1,7 @@
+message testmsg
+{
+    required string str = 1;
+    required int32 int_32 = 2;
+    required double db = 3;
+    required bool boolean = 4;
+}
