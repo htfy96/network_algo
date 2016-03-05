@@ -24,7 +24,7 @@ TEST(TypedMRUMapTest, getSizeTest)
         bool b;
     };
 
-    EXPECT_EQ(1, getSize(SimpleStructure()));
+    EXPECT_EQ(1u, getSize(SimpleStructure()));
 }
 
 namespace
