@@ -3,6 +3,7 @@
 #include <string>
 #include <chrono>
 #include "leveldbgraphtest.pb.h"
+#include "graphdsl.hpp"
 
 using namespace std;
 
@@ -124,3 +125,47 @@ TEST(LevelDbGraphTest, LevelDbGraphSpeedTest)
     delete options.block_cache;
 
 }
+
+TEST(LevelDbGraphTest, LevelDbDeductionStepsTest)
+{
+    try
+    {
+        auto s = "select ()-[id=\"dsfsdf\"]-(c id=\"\")<--()-->(id=\"\") return c"_graphsql;
+        using namespace netalgo;
+        auto result = generateDeductionSteps(s);
+        EXPECT_EQ(7u, result.size());
+
+        EXPECT_EQ(1u, result[0].id);
+        EXPECT_EQ(DeductionTrait::notConstrainted, result[0].constraint);
+        EXPECT_TRUE(result[0].direct);
+
+        EXPECT_EQ(2u, result[1].id);
+        EXPECT_EQ(DeductionTrait::leftConstrained, result[1].constraint);
+        EXPECT_TRUE(result[1].direct);
+
+        EXPECT_EQ(6u, result[2].id);
+        EXPECT_EQ(DeductionTrait::notConstrainted, result[2].constraint);
+        EXPECT_TRUE(result[2].direct);
+
+        EXPECT_EQ(0u, result[3].id);
+        EXPECT_EQ(DeductionTrait::rightConstrained, result[3].constraint);
+        EXPECT_FALSE(result[3].direct);
+
+        EXPECT_EQ(3u, result[4].id);
+        EXPECT_EQ(DeductionTrait::leftConstrained, result[4].constraint);
+        EXPECT_FALSE(result[4].direct);
+
+        EXPECT_EQ(5u, result[5].id);
+        EXPECT_EQ(DeductionTrait::rightConstrained, result[5].constraint);
+        EXPECT_FALSE(result[5].direct);
+
+        EXPECT_EQ(4u, result[6].id);
+        EXPECT_EQ(DeductionTrait::bothConstrained, result[6].constraint);
+        EXPECT_FALSE(result[6].direct);
+    } catch(netalgo::GraphSqlParseStateException& e)
+    {
+        cout << e.getNearbyChars() << endl;
+        throw;
+    }
+}
+

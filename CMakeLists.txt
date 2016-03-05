@@ -74,7 +74,7 @@ if (${WITH_TESTS})
     target_link_libraries(graph_interfacetest ${GTEST_LIB})
 
     protobuf_generate_cpp(LDGTESTPROTO_SRCS LDGTESTPROTO_HDRS test/leveldbgraphtest.proto)
-    add_executable(leveldbgraphtest test/leveldbgraphtest.cpp ${GTEST_SRC} ${LDGTESTPROTO_SRCS} ${LDGTESTPROTO_HDRS})
+    add_executable(leveldbgraphtest test/leveldbgraphtest.cpp src/graphdsl.cpp ${GTEST_SRC} ${LDGTESTPROTO_SRCS} ${LDGTESTPROTO_HDRS})
     target_link_libraries(leveldbgraphtest ${PROTOBUF_LIBRARIES} ${GTEST_LIB} ${LEVELDB_LIBS} ${snappy_LIBRARIES})
 
     protobuf_generate_cpp(REFLECTIONTESTPROTO_SRCS REFLECTIONTESTPROTO_HDRS test/reflectiontest.proto)

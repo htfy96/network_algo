@@ -227,6 +227,7 @@ namespace HIDDEN
                             if (c=='"') break;
                         }
                     }
+                    return {token::string, tmp};
                     break;
                 }
             default:
