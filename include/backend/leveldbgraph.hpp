@@ -4,23 +4,11 @@
 #include "graph_interface.hpp"
 #include "utility.hpp"
 #include "typedmrumap.hpp"
+#include "reflection.hpp"
 
 #include <leveldb/db.h>
 #include <leveldb/write_batch.h>
 #include <leveldb/cache.h>
-
-#include <cereal/archives/binary.hpp>
-#include <cereal/types/utility.hpp>
-#include <cereal/types/vector.hpp>
-#include <cereal/types/set.hpp>
-#include <cereal/types/string.hpp>
-
-#include <google/protobuf/generated_message_util.h>
-#include <google/protobuf/message.h>
-#include <google/protobuf/repeated_field.h>
-#include <google/protobuf/extension_set.h>
-#include <google/protobuf/unknown_field_set.h>
-#include <google/protobuf/stubs/common.h>
 
 #include <string>
 #include <cassert>
@@ -34,130 +22,14 @@
 #include <vector>
 #include <algorithm>
 
-namespace
-{
-    class stringStreamSlice
-    {
-        private:
-            std::string str_;
-        public:
-            stringStreamSlice(const std::ostringstream& os):str_(os.str()) {}
-            leveldb::Slice getSlice()
-            {
-                return leveldb::Slice(str_);
-            }
-    };
-
-    class stringSlice
-    {
-        private:
-            std::string str_;
-        public:
-            stringSlice(std::string s): str_(std::move(s)) {}
-            leveldb::Slice getSlice()
-            {
-                return leveldb::Slice(str_);
-            }
-    };
-
-        
-    template<typename T>
-        stringSlice dataToSliceByProtobuf(const T& data)
-        {
-            std::string result;
-            data.SerializeToString(&result);
-            return result;
-        }
-
-    template<typename T>
-        stringStreamSlice dataToSliceByCereal(const T& data)
-        {
-            std::ostringstream os(std::ios::binary | std::ios::out);
-            cereal::BinaryOutputArchive oa(os);
-            oa << data;
-            return os;
-        }
-
-    template<typename T>
-        T sliceToDataByProtobuf(const leveldb::Slice& slice)
-        {
-            std::string str(slice.ToString());
-            T result;
-            result.ParseFromString(str);
-            return result;
-        }
-
-    template<typename T>
-        T strToDataByCereal(std::string s)
-        {
-            std::istringstream is(std::move(s), std::ios::binary | std::ios::in);
-            cereal::BinaryInputArchive archive(is);
-            T data;
-            archive(data);
-            return data;
-        }
-
-    template<typename T>
-        T strToDataByProtobuf(const std::string s)
-        {
-            T result;
-            result.ParseFromString(s);
-            return result;
-        }
-
-    const char nodeDataIdSuffix[] = ":node:@data";
-    const char edgeDataIdSuffix[] = ":edge:@data";
-    const char outEdgeSuffix[] = ":@outedge";
-    const char inEdgeSuffix[] = ":@inedge";
-
-    template<typename T>
-        std::string addSuffix(const T& originalId, const char* suffix)
-        {
-            leveldb::Slice idSlice(originalId);
-            std::string dataId(idSlice.data(), idSlice.size());
-            dataId += suffix;
-            return dataId;
-        }
-
-}
-
+#include "leveldbgraph_db_utility.hpp"
 namespace netalgo
 {
     template<typename NodeType, typename EdgeType>
+        class LevelDbGraphIterator;
+
+    template<typename NodeType, typename EdgeType>
         class LevelDbGraph;
-    template<typename NodeType, typename EdgeType>
-        struct LevelDbGraphResult
-        {
-            std::unordered_map<std::string, NodeType> nodes;
-            std::unordered_map<std::string, EdgeType> edges;
-            NodeType& getNode(const std::string& key) { return nodes[key]; }
-            EdgeType& getEdge(const std::string& key) { return edges[key]; }
-        };
-
-    class DeductionSteps;
-
-    template<typename NodeType, typename EdgeType>
-        class LevelDbGraphIterator
-        {
-            private:
-                GraphSqlSentence sql;
-            public:
-                typedef decltype(std::declval<NodeType>().id) NodeIdType;
-                typedef decltype(std::declval<EdgeType>().id) EdgeIdType;
-            protected:
-                std::vector< NodeIdType > nodesId;
-                std::vector< EdgeIdType > edgesId;
-            public:
-                typedef LevelDbGraphResult<NodeType, EdgeType> value_type;
-                typedef value_type& reference;
-                typedef value_type* pointer;
-                LevelDbGraphIterator& operator++();
-                value_type operator*();
-                pointer operator->();
-                bool operator==(const LevelDbGraphIterator& other);
-                bool operator!=(const LevelDbGraphIterator& other);
-                friend LevelDbGraph<NodeType, EdgeType>;
-        };
                 
     template<typename NodeType, typename EdgeType>
         class LevelDbGraph : public GraphInterface<NodeType, EdgeType>
@@ -192,6 +64,8 @@ namespace netalgo
             typedef typename InterfaceType::NodeIdType NodeIdType;
             typedef typename InterfaceType::EdgeIdType EdgeIdType;
 
+            friend class LevelDbGraphIterator<NodeType, EdgeType>;
+
             virtual typename InterfaceType::ResultType
                 query(const GraphSqlSentence&) override;
             virtual void setNode(const NodeType&) override;
@@ -216,6 +90,8 @@ namespace netalgo
                         leveldb::WriteBatch *batch = nullptr);
             void setOutEdge(const NodeIdType& nodeId, inoutEdgesType outEdges,
                         leveldb::WriteBatch *batch = nullptr);
+            NodeType getNode(const NodeIdType &nodeId);
+            EdgeType getEdge(const EdgeIdType &edgeId);
         private:
             TypedMRUMap<NodeIdType, inoutEdgesType > outEdgeCache, inEdgeCache;
 
@@ -291,6 +167,26 @@ namespace netalgo
                 else
                     return inoutEdgesType();
             }
+        }
+
+    template<typename NodeType, typename EdgeType>
+        NodeType
+        LevelDbGraph<NodeType, EdgeType>::getNode(const NodeIdType& nodeId)
+        {
+            std::string s;
+            db->Get(leveldb::ReadOptions(), addSuffix(nodeId, nodeDataIdSuffix), &s);
+            return strToDataByProtobuf< NodeType >
+                (s);
+        }
+
+    template<typename NodeType, typename EdgeType>
+        EdgeType
+        LevelDbGraph<NodeType, EdgeType>::getEdge(const EdgeIdType& edgeId)
+        {
+            std::string s;
+            db->Get(leveldb::ReadOptions(), addSuffix(edgeId, edgeDataIdSuffix), &s);
+            return strToDataByProtobuf< EdgeType >
+                (s);
         }
 
     template<typename NodeType, typename EdgeType>
@@ -492,165 +388,21 @@ namespace netalgo
                 }
             }
         }
+}
 
-    namespace
-    {
-        // 0: first node
-        // 1: first edge
-        // (0)-[1]-(2)-[3]-(4)
-        inline bool isNode(const int idx) { return idx % 2 == 0; }
-        inline bool isEdge(const int idx) { return !isNode(idx); }
-        inline int getNodeIndex(const int idx) //start from 0
-        {
-            assert(isNode(idx));
-            return idx / 2;
-        }
-        inline int getEdgeIndex(const int idx)
-        {
-            assert(isEdge(idx));
-            return idx / 2;
-        }
+#include "leveldbgraph_deduction.hpp"
+#include "leveldbgraph_iterator.hpp"
 
-        inline int nodeIndexToGlobalIndex(const int nodeidx)
-        {
-            return nodeidx * 2;
-        }
-
-        inline int edgeIndexToGlobalIndex(const int edgeidx)
-        {
-            return edgeidx * 2 + 1;
-        }
-
-        struct DeductionTrait
-        {
-            std::size_t id;
-            enum ConstraintType
-            {
-                leftConstrained,
-                rightConstrained,
-                bothConstrained,
-                notConstrainted
-            } constraint;
-            bool direct;
-
-            DeductionTrait() = default;
-
-            DeductionTrait(std::size_t idP,
-                        ConstraintType constraintP,
-                        bool directP):
-                id(idP),
-                constraint(constraintP),
-                direct(directP)
-            {}
-
-        };
-
-        bool acquiredDirectly(const netalgo::Properties& prop)
-        {
-            for (const auto& item : prop)
-                if (item.name == "id" &&
-                            item.relationship == netalgo::Relationship::equal
-                   )
-                    return true;
-            return false;
-        }
-
-        typedef std::vector< DeductionTrait > DeductionStepsType;
-
-        void addToDeductionSteps(DeductionStepsType& deductionSteps,
-                    int leftBound,
-                    int rightBound, int maxId) // add Points in (left, right)
-        {
-            std::size_t middleCnt = rightBound - leftBound - 1;
-            // (2)-[3]->(4)-[5]-(6)
-            for(std::size_t j=0; j<middleCnt; ++j)
-            {
-                std::size_t currentId;
-                if (j % 2 == 0)
-                    currentId = leftBound + j / 2 + 1;
-                else
-                    currentId = rightBound - j/2 - 1;
-                DeductionTrait dt;
-                dt.id = currentId;
-                dt.direct = false;
-                if (j == middleCnt - 1)
-                    dt.constraint = DeductionTrait::bothConstrained;
-                else
-                    if (j%2 == 0)
-                        dt.constraint = DeductionTrait::leftConstrained;
-                    else
-                        dt.constraint = DeductionTrait::rightConstrained;
-                
-                if (leftBound == -1)
-                {
-                    if (dt.constraint == DeductionTrait::leftConstrained)
-                        dt.constraint = DeductionTrait::notConstrainted;
-                    else if (dt.constraint == DeductionTrait::bothConstrained)
-                        dt.constraint = DeductionTrait::rightConstrained;
-                }
-
-                if (rightBound > maxId)
-                {
-                    if (dt.constraint == DeductionTrait::rightConstrained)
-                        dt.constraint =DeductionTrait::notConstrainted;
-                    else if (dt.constraint == DeductionTrait::bothConstrained)
-                        dt.constraint = DeductionTrait::leftConstrained;
-                }
-
-                deductionSteps.push_back(dt);
-            }
-        }
-
-        DeductionStepsType
-            generateDeductionSteps(const netalgo::GraphSqlSentence& q)
-            {
-                const netalgo::SelectSentence& selectSentece = q.first;
-                std::size_t nodesCnt = selectSentece.nodes.size();
-                std::vector< DeductionTrait > result;
-
-                for (std::size_t i = 0; i<nodesCnt*2 - 1; ++i)
-                {
-                    bool couldAcquiredDirectly;
-                    if (isNode(i))
-                    {
-                        const auto& node = selectSentece.nodes.at(getNodeIndex(i));
-                        couldAcquiredDirectly = acquiredDirectly(node.properties);
-                    } else
-                    {
-                        const auto& edge = selectSentece.edges.at(getEdgeIndex(i));
-                        couldAcquiredDirectly = acquiredDirectly(edge.properties);
-                    }
-                    if (couldAcquiredDirectly)
-                        result.push_back(DeductionTrait(
-                                        i,
-                                        (!result.empty() && (*result.rbegin()).id == i-1) ?
-                                            DeductionTrait::leftConstrained :
-                                            DeductionTrait::notConstrainted,
-                                        true
-                                        ));
-                } //first loop for points that could be directly acquired
-
-                std::size_t directAcquiredSize = result.size();
-                for(std::size_t i = 0; i<directAcquiredSize; ++i)
-                {
-                    std::size_t now = result[i].id;
-                    std::size_t prev = i > 0 ? result[i-1].id : -1;
-                    addToDeductionSteps(result, prev, now, nodesCnt *2 -2);
-                }
-                addToDeductionSteps(result, result[directAcquiredSize - 1].id, nodesCnt * 2 - 1, nodesCnt * 2 - 2);
-                return result;
-            }
-
-    } //anonymous namespace
-
+namespace netalgo
+{
     template<typename NodeType, typename EdgeType>
-        typename LevelDbGraph<NodeType, EdgeType>::ResultType 
+        typename LevelDbGraph<NodeType, EdgeType>::ResultType
         LevelDbGraph<NodeType, EdgeType>::query(const GraphSqlSentence& q)
         {
+            LevelDbGraphIterator<NodeType, EdgeType> it(*this);
+            DeductionStepsType deductionSteps = generateDeductionSteps(q);
         }
 
-
-            
 }
 
 #endif
