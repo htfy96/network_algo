@@ -90,7 +90,7 @@ if (${WITH_TESTS})
     target_link_libraries(typedmrumaptest ${GTEST_LIB})
 
     add_executable(disksettest test/disksettest.cpp ${GTEST_SRC})
-    target_link_libraries(disksettest ${GTEST_LIB} ${LEVELDB_LIBS} ${PROTOBUF_LIBRARIES})
+    target_link_libraries(disksettest ${GTEST_LIB} ${LEVELDB_LIBS} ${snappy_LIBRARIES} ${PROTOBUF_LIBRARIES})
 
     if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
         add_executable(graphdsltest test/graphdsltest.cpp ${GTEST_SRC})
