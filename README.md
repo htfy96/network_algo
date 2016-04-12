@@ -52,7 +52,8 @@ using namespace netalgo;
 using namespace std;
 int main()
 {
-    LeveldbGraph<Node, Edge> graph("mygraph.db");
+    LeveldbGraph<Node, Edge, true> graph("mygraph.db");
+    //the third argument means "directed". true is the default value
     Node n; n.set_id("N"); n.set_dummy(2.33);
     Node m; m.set_id("M"); m.set_dummy(6.66);
     Node k; k.set_id("K"); k.set_dummy(-2.5);
@@ -67,6 +68,12 @@ int main()
     {
         cout << it->getNode("a").id() << " " << it->getNode("c").id() << endl; //N K
         cout << it->getEdge("e1").dummy() << endl; //1
+        Node a = it->getNode("a");
+        std::set<std::string> outEdges = graph.getOutEdges(a.id());
+        for (auto &e: outEdges)
+        {
+            graph.removeEdge(e.id());
+        }
     }
 
     cout << calcDensity(graph) << endl; //use existing algorithm
