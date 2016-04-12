@@ -59,13 +59,14 @@ namespace netalgo
                         typedef const value_type& reference;
                         typedef const value_type *pointer;
                         
-                        bool operator==(const Iterator_c &other)
+                        bool operator==(const Iterator_c &other) const
                         {
                             if (it->Valid() != other.it->Valid()) return false;
-                            return it->key() == other.it->key();
+                            else if (it->Valid()) return it->key() == other.it->key();
+                            else return true;
                         }
 
-                        bool operator!=(const Iterator_c &other)
+                        bool operator!=(const Iterator_c &other) const
                         {
                             return ! operator==(other);
                         }
@@ -75,7 +76,7 @@ namespace netalgo
                             it->Next();
                             if (it->Valid())
                                 obj = ds_impl::deserializeFromString<T>(it->key().ToString());
-                            return it;
+                            return *this;
                         }
 
                         Iterator_c operator++(int)
@@ -190,12 +191,33 @@ namespace netalgo
                     leveldb::Iterator *it =
                         db->NewIterator(leveldb::ReadOptions());
                     it->Seek(ds_impl::serializeToString(obj));
-                    if (it->key() == ds_impl::serializeToString(obj))
+                    if (it->Valid() && it->key() == ds_impl::serializeToString(obj))
                         return const_iterator(it);
                     else
+                    {
+                        delete it;
                         return end();
+                    }
+                }
+
+                void clear()
+                {
+                    leveldb::Iterator *it = db->NewIterator(leveldb::ReadOptions());
+                    it->SeekToFirst();
+                    while (it->Valid())
+                    {
+                        leveldb::Iterator *itnext = it;
+                        itnext->Next();
+                        db->Delete(leveldb::WriteOptions(), it->key());
+                        it = itnext;
+                        delete itnext;
+                    }
+                    delete it;
                 }
         };
+
+    template<typename T>
+        typename DiskSet<T>::SmartComparator DiskSet<T>::sc;
 
     namespace TempTest
     {
