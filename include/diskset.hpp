@@ -214,6 +214,22 @@ namespace netalgo
                     }
                     delete it;
                 }
+
+                bool empty() const
+                {
+                    leveldb::Iterator *it = db->NewIterator(leveldb::ReadOptions());
+                    it->SeekToFirst();
+                    if (it->Valid())
+                    {
+                        delete it;
+                        return false;
+                    } else
+                    {
+                        delete it;
+                        return false;
+                    }
+                }
+
         };
 
     template<typename T>
