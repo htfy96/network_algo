@@ -25,6 +25,5 @@ namespace
         return s;
     }
 
-
 }
 #endif

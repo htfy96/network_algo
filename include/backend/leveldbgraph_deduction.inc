@@ -60,6 +60,18 @@ namespace netalgo
 
 		};
 
+        bool isLeftContrained(const DeductionTrait::ConstraintType dc)
+        {
+            typedef DeductionTrait::ConstraintType ConstraintType;
+            return dc == ConstraintType::leftConstrained || dc == ConstraintType::bothConstrained;
+        }
+
+        bool isRightContrained(const DeductionTrait::ConstraintType dc)
+        {
+            typedef DeductionTrait::ConstraintType ConstraintType;
+            return dc == ConstraintType::rightConstrained || dc == ConstraintType::bothConstrained;
+        }
+
 		bool acquiredDirectly(const netalgo::Properties& prop)
 		{
 			for (const auto& item : prop)
@@ -69,6 +81,19 @@ namespace netalgo
 					return true;
 			return false;
 		}
+
+        std::string getId(const netalgo::Properties& prop)
+        {
+            auto result = std::find_if(prop.begin(), prop.end(),
+                        [](const Property& p)
+                        {
+                            return p.name == "id";
+                        });
+            if (result != prop.end())
+                return result->value.substr(1, result->value.size() -2);
+            else
+                return "";
+        }
 
 		typedef std::vector< DeductionTrait > DeductionStepsType;
 
@@ -96,7 +121,7 @@ namespace netalgo
 					else
 						dt.constraint = DeductionTrait::rightConstrained;
 
-				if (leftBound == -1)
+				if (leftBound == -1 && j == 0)
 				{
 					if (dt.constraint == DeductionTrait::leftConstrained)
 						dt.constraint = DeductionTrait::notConstrainted;
@@ -104,7 +129,7 @@ namespace netalgo
 						dt.constraint = DeductionTrait::rightConstrained;
 				}
 
-				if (rightBound > maxId)
+				if (rightBound > maxId && (j == 1 || middleCnt == 1) )
 				{
 					if (dt.constraint == DeductionTrait::rightConstrained)
 						dt.constraint =DeductionTrait::notConstrainted;
@@ -152,7 +177,10 @@ namespace netalgo
 					std::size_t prev = i > 0 ? result[i-1].id : -1;
 					addToDeductionSteps(result, prev, now, nodesCnt *2 -2);
 				}
-				addToDeductionSteps(result, result[directAcquiredSize - 1].id, nodesCnt * 2 - 1, nodesCnt * 2 - 2);
+				addToDeductionSteps(result,
+                            directAcquiredSize ? result[directAcquiredSize - 1].id : -1,
+                            nodesCnt * 2 - 1,
+                            nodesCnt * 2 - 2);
 				return result;
 			}
 

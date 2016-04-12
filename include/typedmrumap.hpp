@@ -55,7 +55,7 @@ namespace
                 std::size_t objectSize;
                 static const std::size_t numberClearAtOnce = 10;
             public:
-                TypedMRUMap(const size_t max_objectSize): max_objectSize_(max_objectSize), timestamp(0),
+                explicit TypedMRUMap(const size_t max_objectSize): max_objectSize_(max_objectSize), timestamp(0),
                 objectSize(0) {}
                 TypedMRUMap(const TypedMRUMap&) = default;
                 TypedMRUMap(TypedMRUMap&&) = default;

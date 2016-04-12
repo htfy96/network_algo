@@ -20,7 +20,7 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${snappy_INCLUDE_DIRS})
 
 
-set(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wextra -Wno-error -O0 -g -DMYDEBUG -Wno-maybe-uninitialized -Wno-return-type -Wno-reorder")
+set(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wextra -Wno-error -O2 -g -DMYDEBUG -Wno-maybe-uninitialized -Wno-return-type -Wno-reorder")
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wno-error -O2 -Wno-maybe-uninitialized -Wno-return-type -Wno-reorder")
 
 include(CheckCXXCompilerFlag)
@@ -80,6 +80,11 @@ if (${WITH_TESTS})
     protobuf_generate_cpp(REFLECTIONTESTPROTO_SRCS REFLECTIONTESTPROTO_HDRS test/reflectiontest.proto)
     add_executable(reflectiontest test/reflectiontest.cpp ${GTEST_SRC} ${REFLECTIONTESTPROTO_SRCS} ${REFLECTIONTESTPROTO_HDRS})
     target_link_libraries(reflectiontest ${PROTOBUF_LIBRARIES} ${GTEST_LIB})
+
+    protobuf_generate_cpp(TFLABELPROTO_SRCS TFLABELPROTO_HDRS include/algorithm/tflabel.proto)
+    add_executable(tflabeltest test/tflabeltest.cpp src/graphdsl.cpp ${GTEST_SRC} ${LDGTESTPROTO_SRCS} ${TFLABELPROTO_SRCS} ${TFLABELPROTO_HDRS})
+    target_link_libraries(tflabeltest ${PROTOBUF_LIBRARIES} ${GTEST_LIB} ${LEVELDB_LIBS} ${snappy_LIBRARIES})
+    file(COPY test/data.txt DESTINATION ${networkalgo_BINARY_DIR})
 
     add_executable(typedmrumaptest test/typedmrumaptest.cpp ${GTEST_SRC})
     target_link_libraries(typedmrumaptest ${GTEST_LIB})

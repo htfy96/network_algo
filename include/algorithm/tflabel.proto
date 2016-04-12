@@ -1,0 +1,13 @@
+message TFLabelNode
+{
+    required string id = 1; 
+    required int32 level = 2;
+    //...
+}
+
+message TFLabelEdge
+{
+    required string id = 1;
+    required string from = 2;
+    required string to = 3; 
+}

@@ -18,38 +18,38 @@ TEST(ReflectionTest, EqualCompareTest)
     EXPECT_TRUE( reflectedCompare(msgp,
                     "str",
                     netalgo::Relationship::equal,
-                    "foo"));
+                    "\"foo\""));
     EXPECT_FALSE(reflectedCompare(msgp,
                     "str",
                     netalgo::Relationship::equal,
-                    "bar"));
+                    "\"bar\""));
 
     EXPECT_TRUE(reflectedCompare(msgp,
                     "db",
                     netalgo::Relationship::equal,
-                    2.33));
+                    "2.33"));
     EXPECT_FALSE(reflectedCompare(msgp,
                     "db",
                     netalgo::Relationship::equal,
-                    6.66));
+                    "6.66"));
     
     EXPECT_TRUE(reflectedCompare(msgp,
                     "boolean",
                     netalgo::Relationship::equal,
-                    false));
+                    "false"));
     EXPECT_FALSE(reflectedCompare(msgp,
                     "boolean",
                     netalgo::Relationship::equal,
-                    true));
+                    "true"));
 
     EXPECT_TRUE(reflectedCompare(msgp,
                     "int_32",
                     netalgo::Relationship::equal,
-                    666));
+                    "666"));
     EXPECT_FALSE(reflectedCompare(msgp,
                     "int_32",
                     netalgo::Relationship::equal,
-                    233));
+                    "223"));
 }
 
 TEST(ReflectionTest, SmallerCompareTest)
@@ -63,37 +63,37 @@ TEST(ReflectionTest, SmallerCompareTest)
     EXPECT_TRUE(reflectedCompare(msgp,
                     "str",
                     netalgo::Relationship::smaller,
-                    "BBC"
+                    "\"BBC\""
                     ));
     EXPECT_FALSE(reflectedCompare(msgp,
                     "str",
                     netalgo::Relationship::smaller,
-                    "AAA"
+                    "\"AAA\""
                     ));
     EXPECT_TRUE(reflectedCompare(msgp,
                     "int_32",
                     netalgo::Relationship::smaller,
-                    43
+                    "43"
                     ));
     EXPECT_FALSE(reflectedCompare(msgp,
                     "int_32",
                     netalgo::Relationship::smaller,
-                    41
+                    "41"
                     ));
     EXPECT_TRUE(reflectedCompare(msgp,
                     "db",
                     netalgo::Relationship::smaller,
-                    -6.1
+                    "-6.1"
                     ));
     EXPECT_TRUE(reflectedCompare(msgp,
                     "db",
                     netalgo::Relationship::smaller,
-                    6.1
+                    "6.1"
                     ));
     EXPECT_FALSE(reflectedCompare(msgp,
                     "boolean",
                     netalgo::Relationship::smaller,
-                    true
+                    "true"
                     ));
 
 }

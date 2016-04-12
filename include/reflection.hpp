@@ -7,7 +7,9 @@
 #include <typeinfo>
 #include <cassert>
 #include <utility>
+#include <cstdlib>
 #include "graphdsl.hpp"
+#include "utility.hpp"
 
 #include <google/protobuf/stubs/common.h>
 #include <google/protobuf/generated_message_util.h>
@@ -33,7 +35,7 @@ namespace
             }
 
     template<typename From, typename To>
-        To omni_cast_impl_detail(const From& value, const bool)
+        inline To omni_cast_impl_detail(const From& value, const bool)
         {
             return static_cast<To>(value);
         }
@@ -41,7 +43,7 @@ namespace
     //special case for const string& to const char*
 
     template<typename From, typename To>
-        To omni_cast_impl_detail(const From& value, const int,
+        inline To omni_cast_impl_detail(const From& value, const int,
                     typename std::enable_if<std::is_same<From, std::string>::value
                     &&
                     std::is_same< typename std::decay<To>::type, const char* >::value >::type = 0)
@@ -50,7 +52,7 @@ namespace
         }
 
     template<typename From, typename To>
-        To omni_cast_impl(const From& value, const int,
+        inline To omni_cast_impl(const From& value, const int,
                     typename std::enable_if<std::is_convertible<typename std::decay<From>::type, typename std::decay<To>::type>::value ||
                     (std::is_same<From, std::string>::value &&
                      std::is_same< typename std::decay<To>::type, const char*>::value),
@@ -61,7 +63,7 @@ namespace
         }
 
     template<typename From, typename To>
-        To omni_cast_impl(const From& value, const bool)
+        inline To omni_cast_impl(const From& value, const bool)
         {
             throw std::runtime_error(std::string("Reflection Error: Cannot cast ")+
                         typeid(From).name() +" (which decays to " +
@@ -71,7 +73,7 @@ namespace
         }
 
     template<typename From, typename To>
-        To omni_cast(const From& value)
+        inline To omni_cast(const From& value)
         {
             return omni_cast_impl<From, To>(value, 1);
         }
@@ -98,10 +100,107 @@ namespace
             }
         }
 
+    template<typename T>
+        struct from_string
+        {
+            T operator()(const std::string& s)
+            {
+                (void)(s);
+                throw std::runtime_error(std::string("unrecognized type from string ") + 
+                            typeid(T).name());
+            }
+        };
+
+    template<>
+        struct from_string<bool>
+        {
+            bool operator()(const std::string& s)
+            {
+                if (strLower(s) == "true")
+                    return true;
+                if (strLower(s) == "false")
+                    return false;
+                throw std::runtime_error(s + " cannot be converted to bool");
+            }
+        };
+
+    template<>
+        struct from_string<double>
+        {
+            double operator()(const std::string &s)
+            {
+                char* ind;
+                double ans = std::strtod(s.c_str(), &ind);
+                if (ind == s.c_str())
+                    throw std::runtime_error(s + "cannot be converted to double");
+                return ans;
+            }
+        };
+
+    template<>
+        struct from_string<float>
+        {
+            float operator()(const std::string &s)
+            {
+                return from_string<double>()(s);
+            }
+        };
+
+    template<>
+        struct from_string<std::string>
+        {
+            std::string operator()(const std::string& s)
+            {
+                assert(s.size() > 1 && s[0] == '"' && *s.rbegin() == '"');
+                std::string tmp = s.substr(1, s.size() - 2);
+                return tmp;
+            }
+        };
+
+    template<>
+        struct from_string<google::protobuf::int32>
+        {
+            google::protobuf::int32
+                operator()(const std::string& s)
+                {
+                    return std::stol(s);
+                }
+        };
+
+
+    template<>
+        struct from_string<google::protobuf::int64>
+        {
+            google::protobuf::int64
+                operator()(const std::string& s)
+                {
+                    return std::stol(s);
+                }
+        };
+
+    template<>
+        struct from_string<google::protobuf::uint32>
+        {
+            google::protobuf::uint32
+                operator()(const std::string& s)
+                {
+                    return std::stol(s);
+                }
+        };
+
+    template<>
+        struct from_string<google::protobuf::uint64>
+        {
+            google::protobuf::uint64
+                operator()(const std::string& s)
+                {
+                    return std::stol(s);
+                }
+        };
+
     //Compare given field of a protobuf object with a value
-    template<typename U>
-        bool reflectedCompare(google::protobuf::Message *obj, const std::string& fieldName,
-                    netalgo::Relationship relationship, const U& value)
+    bool reflectedCompare(google::protobuf::Message *obj, const std::string& fieldName,
+                netalgo::Relationship relationship, const std::string& value)
         {
             using namespace google::protobuf;
             const FieldDescriptor* fdp;
@@ -111,12 +210,12 @@ namespace
             switch(fdp->cpp_type())
             {
                 case FieldDescriptor::CPPTYPE_BOOL:
-                return compareWithRelationship( reflection->GetBool(*obj, fdp),omni_cast<U, bool>(value),
+                return compareWithRelationship( reflection->GetBool(*obj, fdp),from_string<bool>()(value),
                             relationship);
                 break;
 
                 case FieldDescriptor::CPPTYPE_DOUBLE:
-                return compareWithRelationship(  reflection->GetDouble(*obj, fdp),omni_cast<U, double>(value) ,
+                return compareWithRelationship(  reflection->GetDouble(*obj, fdp), from_string<double>()(value) ,
                             relationship);
                 break;
 
@@ -125,17 +224,17 @@ namespace
                 //break;
 
                 case FieldDescriptor::CPPTYPE_FLOAT:
-                return compareWithRelationship(  reflection->GetFloat(*obj, fdp),omni_cast<U, float>(value) ,
+                return compareWithRelationship(  reflection->GetFloat(*obj, fdp), from_string<float>()(value) ,
                             relationship);
                 break;
 
                 case FieldDescriptor::CPPTYPE_INT32:
-                return compareWithRelationship(  reflection->GetInt32(*obj, fdp),omni_cast<U, int32>(value) ,
+                return compareWithRelationship(  reflection->GetInt32(*obj, fdp),from_string<int32>()(value) ,
                             relationship);
                 break;
 
                 case FieldDescriptor::CPPTYPE_INT64:
-                return compareWithRelationship(  reflection->GetInt64(*obj, fdp),omni_cast<U, int64>(value) ,
+                return compareWithRelationship(  reflection->GetInt64(*obj, fdp),from_string<int64>()(value) ,
                             relationship);
                 break;
 
@@ -148,17 +247,18 @@ namespace
                 break;
 
                 case FieldDescriptor::CPPTYPE_STRING:
-                return compareWithRelationship(  reflection->GetString(*obj, fdp),omni_cast<U, std::string>(value) ,
+                return compareWithRelationship(  reflection->GetString(*obj, fdp),
+                            from_string<std::string>()(value) ,
                             relationship);
                 break;
 
                 case FieldDescriptor::CPPTYPE_UINT32:
-                return compareWithRelationship(  reflection->GetUInt32(*obj, fdp),omni_cast<U, uint32>(value) ,
+                return compareWithRelationship(  reflection->GetUInt32(*obj, fdp),from_string<uint32>()(value) ,
                             relationship);
                 break;
 
                 case FieldDescriptor::CPPTYPE_UINT64:
-                return compareWithRelationship(  reflection->GetUInt64(*obj, fdp),omni_cast<U, uint64>(value) ,
+                return compareWithRelationship(  reflection->GetUInt64(*obj, fdp),from_string<uint64>()(value) ,
                             relationship);
                 break;
 

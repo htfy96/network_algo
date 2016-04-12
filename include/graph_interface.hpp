@@ -67,7 +67,6 @@ class GraphInterface
             >::type
             EdgeIdType;
 
-        virtual ResultType query(const GraphSqlSentence&) = 0;
         virtual void setNode(const NodeType&) = 0;
         virtual void setEdge(const EdgeType&) = 0;
         virtual void setNodesBundle(const NodesBundle&) = 0;
