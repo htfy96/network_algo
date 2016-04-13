@@ -50,6 +50,7 @@ namespace netalgo
                     leveldb::DB* db;
                     leveldb::Options options;
                     const std::string filename_;
+                    const std::size_t cacheSize_;
                 public:
                     explicit LevelDbGraphBase(const std::string& filename);
                     explicit LevelDbGraphBase(const std::string& filename, std::size_t cacheSizeInMB);
@@ -74,7 +75,7 @@ namespace netalgo
 
         template<typename NodeType, typename EdgeType>
             LevelDbGraphBase<NodeType, EdgeType>::LevelDbGraphBase(const std::string& filename,
-                        std::size_t cacheSizeInMB): filename_(filename)
+                        std::size_t cacheSizeInMB): filename_(filename), cacheSize_(cacheSizeInMB)
         {
             options.create_if_missing = true;
             options.block_cache = leveldb::NewLRUCache(cacheSizeInMB * 1024 * 1024);
@@ -98,7 +99,20 @@ namespace netalgo
         template<typename NodeType, typename EdgeType>
             void LevelDbGraphBase<NodeType, EdgeType>::destroy()
             {
+                delete db;
+                delete options.block_cache;
                 leveldb::DestroyDB(filename_, leveldb::Options());
+
+                options.block_cache = leveldb::NewLRUCache(cacheSize_ * 1024 * 1024);
+                leveldb::Status status = leveldb::DB::Open(options,
+                            filename_,
+                            &db);
+                if (!status.ok())
+                {
+                    std::cerr << status.ToString() << std::endl;
+                    std::terminate();
+                }
+
             }
     }
 
@@ -411,6 +425,7 @@ namespace netalgo
         void LevelDbGraph<NodeType, EdgeType, true>::setNode(const NodeType& node)
         {
             stringSlice ssslice = dataToSliceByProtobuf(node);
+            //std::cout << "Actual added id:"<< addSuffix(node.id(), nodeDataIdSuffix) << std::endl;
             leveldb::Status status = this->db->Put(leveldb::WriteOptions(), addSuffix(node.id(), nodeDataIdSuffix), ssslice.getSlice());
             assert(status.ok());
         }
@@ -431,6 +446,7 @@ namespace netalgo
             {
                 stringSlice ssslice = dataToSliceByProtobuf(node);
                 batch.Put(addSuffix(node.id(), nodeDataIdSuffix), ssslice.getSlice());
+                //std::cout << "Put " << addSuffix(node.id(), nodeDataIdSuffix) << std::endl;
             }
             leveldb::Status status = this->db->Write(leveldb::WriteOptions(), &batch);
             assert(status.ok());

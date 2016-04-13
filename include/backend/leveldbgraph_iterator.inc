@@ -71,6 +71,7 @@ namespace netalgo
                                     T& val);
 
                 bool found = false;
+                bool cached = false;
         };
 
     template<typename NodeType, typename EdgeType, bool isDirected>
@@ -173,6 +174,8 @@ namespace netalgo
         //std::cout << "DeductionStepsSize:" << this->deductionSteps.size() << std::endl;
         this->nodesId.resize(gs.first.nodes.size());
         this->edgesId.resize(gs.first.edges.size());
+        this->nextNodesId.resize(gs.first.nodes.size());
+        this->nextEdgesId.resize(gs.first.edges.size());
         searchPossible(0);
         if (!this->found)
             this->isEnd = true;
@@ -189,6 +192,8 @@ namespace netalgo
         //std::cout << "DeductionStepsSize:" << this->deductionSteps.size() << std::endl;
         this->nodesId.resize(gs.first.nodes.size());
         this->edgesId.resize(gs.first.edges.size());
+        this->nextNodesId.resize(gs.first.nodes.size());
+        this->nextEdgesId.resize(gs.first.edges.size());
         searchPossible(0);
         if (!this->found)
         this->isEnd = true;
@@ -220,28 +225,33 @@ namespace netalgo
     {
         if (this->isEnd)
             throw std::runtime_error("++ on a past-end leveldbGraph iterator is invalid");
-        if (!this->nextNodesId.empty())
-        {
-            if (!findNextPossible(this->nodesId.size() * 2 - 2))
-                this->isEnd = true;
-            this->nodesId.swap(this->nextNodesId);
-            this->edgesId.swap(this->nextEdgesId);
-            return *this;
-        } else
-        {
-            if (!findNextPossible(this->nodesId.size() * 2 - 2))
-            {
-                this->isEnd = true;
-                return *this;
-            }
-            this->nodesId.swap(this->nextNodesId);
-            this->edgesId.swap(this->nextEdgesId);
-            if (!findNextPossible(this->nodesId.size() * 2 - 2))
-                this->isEnd = true;
-            this->nodesId.swap(this->nextNodesId);
-            this->edgesId.swap(this->nextEdgesId);
-            return *this;
-        }
+        if (!findNextPossible(this->nodesId.size() * 2 - 2))
+            this->isEnd = true;
+        return *this;
+        //if (this->cached)
+        //{
+            //if (!findNextPossible(this->nodesId.size() * 2 - 2))
+                //this->isEnd = true;
+            //this->nodesId.swap(this->nextNodesId);
+            //this->edgesId.swap(this->nextEdgesId);
+            //return *this;
+        //} else
+        //{
+            //this->cached = true;
+            //if (!findNextPossible(this->nodesId.size() * 2 - 2))
+            //{
+                //this->isEnd = true;
+                //std::cout << "next failed1" << std::endl;
+                //return *this;
+            //}
+            //this->nodesId.swap(this->nextNodesId);
+            //this->edgesId.swap(this->nextEdgesId);
+            //if (!findNextPossible(this->nodesId.size() * 2 - 2))
+                //this->isEnd = true;
+            //this->nodesId.swap(this->nextNodesId);
+            //this->edgesId.swap(this->nextEdgesId);
+            //return *this;
+        //}
     }
 
     template<typename NodeType, typename EdgeType>
@@ -250,22 +260,25 @@ namespace netalgo
     {
         if (this->isEnd)
         throw std::runtime_error("++ on a past-end leveldbGraph iterator is invalid");
-        if (!this->nextNodesId.empty())
-        {
-            if (!findNextPossible(this->nodesId.size() * 2 - 2))
-            this->isEnd = true;
-            this->nodesId.swap(this->nextNodesId);
-            this->edgesId.swap(this->nextEdgesId);
-        } else
-        {
-            assert(findNextPossible(this->nodesId.size() * 2 - 2));
-            this->nodesId.swap(this->nextNodesId);
-            this->edgesId.swap(this->nextEdgesId);
-            if (!findNextPossible(this->nodesId.size() * 2 - 2))
-            this->isEnd = true;
-            this->nodesId.swap(this->nextNodesId);
-            this->edgesId.swap(this->nextEdgesId);
-        }
+        if (!findNextPossible(this->nodesId.size() * 2 - 2))
+        this->isEnd = true;
+        return *this;
+        //if (!this->nextNodesId.empty())
+        //{
+            //if (!findNextPossible(this->nodesId.size() * 2 - 2))
+            //this->isEnd = true;
+            //this->nodesId.swap(this->nextNodesId);
+            //this->edgesId.swap(this->nextEdgesId);
+        //} else
+        //{
+            //assert(findNextPossible(this->nodesId.size() * 2 - 2));
+            //this->nodesId.swap(this->nextNodesId);
+            //this->edgesId.swap(this->nextEdgesId);
+            //if (!findNextPossible(this->nodesId.size() * 2 - 2))
+            //this->isEnd = true;
+            //this->nodesId.swap(this->nextNodesId);
+            //this->edgesId.swap(this->nextEdgesId);
+        //}
     }
 
     template<typename NodeType, typename EdgeType>
@@ -754,22 +767,28 @@ namespace netalgo
                     break;
                 case DeductionTrait::ConstraintType::notConstrainted:
                     {
-                        leveldb::Iterator *it = this->db->NewIterator(leveldb::ReadOptions());
-                        for(it->Seek(addSuffix(this->nodesId.at(getNodeIndex(id)),
-                                            nodeDataIdSuffix));
+                        std::unique_ptr<leveldb::Iterator> it ( this->db->NewIterator(leveldb::ReadOptions()) );
+                        it->Seek(addSuffix(this->nodesId.at(getNodeIndex(id)), nodeDataIdSuffix));
+                        //std::cout << this->nodesId.at(getNodeIndex(id)) << " " << it->Valid() << std::endl;
+                        //std::cout << "  "<<it->key().ToString() << std::endl;
+                        it->Next();
+                        //if (it->Valid())std::cout << it->key().ToString() << std::endl;
+                        for(;
                                     it->Valid();
                                     it->Next())
                         {
+                            //std::cout << "visiting " << it->key().ToString() << std::endl;
                             std::string key = it->key().ToString();
                             std::size_t pos = key.find(nodeDataIdSuffix);
                             if (pos != key.npos)
                             {
                                 this->nodesId.at(getNodeIndex(id)) = key.substr(0, pos);
+                                //std::cout << "key="<<key << std::endl;
                                 if (isSelfConstrained(id)) break;
                             }
                         }
                         bool valid = it->Valid();
-                        delete it;
+                        //std::cout << std::boolalpha << valid << std::endl;
                         return valid;
                         break;
                     } //notConstrainted
@@ -1159,6 +1178,7 @@ namespace netalgo
                                         it->Next())
                             {
                                 std::string key = it->key().ToString();
+                                //std::cout << "checking key " << key << std::endl;
                                 std::size_t pos = key.find(nodeDataIdSuffix);
                                 if (pos != key.npos)
                                 {
@@ -1166,7 +1186,7 @@ namespace netalgo
                                     if (isSelfConstrained(id))
                                     {
                                         searchPossible(dedId + 1);
-                                        if (this->found) return;
+                                        if (this->found) { delete it; return; }
                                     }
                                 }
                             }

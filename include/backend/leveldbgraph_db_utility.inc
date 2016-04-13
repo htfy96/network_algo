@@ -105,7 +105,8 @@ namespace
 		std::string addSuffix(const T& originalId, const char* suffix)
 		{
 			leveldb::Slice idSlice(originalId);
-			std::string dataId(idSlice.data(), idSlice.size());
+			std::string dataId = idSlice.ToString();
+            //std::cout << "Adding suffix " << dataId << "   " <<suffix << std::endl;
 			dataId += suffix;
 			return dataId;
 		}

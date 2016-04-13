@@ -2,6 +2,7 @@
 #include "backend/leveldbgraph.hpp"
 #include<cstdio>
 #include<iostream>
+#include <fstream>
 #include<cstdlib>
 #include<algorithm>
 #include<vector>
@@ -50,6 +51,7 @@ namespace netalgo
             public:
                 TFLabel(GraphT &g): originGraph(g), graph("tflabel.db")
                 {
+                    graph.destroy();
                     pre_to_new_NUM = new int [maxN];
                     tln = new int[maxn];
                     pre = new int[maxn];
@@ -142,7 +144,7 @@ namespace netalgo
                     if(x==u)  
                         break;  
                 }  
-            }  
+            } 
         }  
 
     template<typename GraphT>
@@ -157,19 +159,22 @@ namespace netalgo
 
     template<typename GraphT>
         void TFLabel<GraphT>::read(){
-            freopen("data.txt","r",stdin);
+            //freopen("data.txt","r",stdin);
+            ifstream is("data.txt");
             cout<<"start"<<endl; 
             int x,y = 0;
             vector<pair<int,int> >E;
             vector<int>v;
             int same = 0; 
-            while (scanf("%d%d",&x,&y)!=-1){
+            while (is >> x >> y){
                 //if (x == y && x < 1000)cout<<x<<endl;
+                cout << "Read "<<x <<" "<<y << endl;
                 if (x == y)same++;
                 E.push_back(make_pair(x,y));
                 v.push_back(x);
                 v.push_back(y);
             }
+            is.close();
             cout<<"same:"<<same<<endl;
             sort(v.begin(),v.end());
             v.erase(unique(v.begin(), v.end()),v.end());
@@ -193,9 +198,20 @@ namespace netalgo
                 Node x;
                 x.set_id(to_string(i));
                 x.set_level(1);
+                nodeVec.push_back(x);
+                cout<<"#####"<<i<<endl;
 
             }
             graph.setNodesBundle(nodeVec);
+            int cnt = 0;
+            for (auto it = graph.query("select (a) return a"_graphsql);
+                        it!=graph.end();
+                        ++it)
+            {
+                ++cnt;
+                cout <<cnt << it->getNode("a").id() << endl;
+            }
+
 
             for (int i = 0; i < tot; ++i)
                 for (size_t j = 0; j < GG[i].size(); ++j){
@@ -296,13 +312,16 @@ namespace netalgo
         void TFLabel<GraphT>::construct(){	
             {
                 auto start = graph.query("select (a) return a"_graphsql); // return an iterator
+                int fuck = 0;
                 for (auto it=start; it!=graph.end(); ++it) //iterates over result set
                 {
                     Node a = it->getNode("a");
+                    cout<<fuck++<<a.id()<<endl;
                     a.set_level(tln[atoi(a.id().c_str())]);
                     graph.setNode(a);
                 }
             }
+            cout<<TF<<endl;
             for (int ii = 1; ii <= TF; ++ii){
                 //a***********************************************************a
                 {
@@ -310,6 +329,7 @@ namespace netalgo
                     for (auto it=start; it!=graph.end(); ++it) //iterates over result set
                     {
                         Node a = it->getNode("a");
+                        cout<<a.id()<<endl;
                         int curl = a.level();
                         if (curl % 2 == 0)continue;
                         set<string> outEdges = graph.getOutEdge(a.id());
@@ -392,11 +412,11 @@ namespace netalgo
                 //c*****************************************************************c
                 {
                     auto start = graph.query("select (a) return a"_graphsql); // return an iterator
-                    for (auto it=start; it!=graph.end(); ++it) //iterates over result set
+                    for (auto it=start; it!=graph.end();) //iterates over result set
                     {
                         Node a = it->getNode("a");
                         int curl = a.level();
-                        if (curl % 2 == 0)continue;
+                        if (curl % 2 == 0){ ++it; continue; }
                         set<string> inEdges = graph.getInEdge(a.id());			
                         set<string> outEdges = graph.getOutEdge(a.id());
                         set<string> inNode;
@@ -426,7 +446,10 @@ namespace netalgo
                             }
                         }
                         graph.setEdgesBundle(edgeVec);
+                        ++it;
+
                         graph.removeNode(a.id());						
+                        std::cout << "removed" << a.id() << std::endl;
                     }    
                 }
             }	
