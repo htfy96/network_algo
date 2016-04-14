@@ -57,6 +57,7 @@ include_directories(src/)
 include_directories(${networkalgo_BINARY_DIR}/soci/include)
 include_directories(NanoSQL)
 include_directories(cereal/include)
+include_directories(spdlog/include)
 
 if (${WITH_TESTS})
 

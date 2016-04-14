@@ -7,3 +7,6 @@
 [submodule "cereal"]
 	path = cereal
 	url = https://github.com/USCiLab/cereal.git
+[submodule "spdlog"]
+	path = spdlog
+	url = https://github.com/gabime/spdlog.git
