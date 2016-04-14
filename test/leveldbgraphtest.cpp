@@ -1,3 +1,4 @@
+#include "debug.hpp"
 #include "gtest/gtest.h"
 #include "backend/leveldbgraph.hpp"
 #include <string>
@@ -88,7 +89,7 @@ TEST(LevelDbGraphTest, LevelDbGraphQuery)
             if (chrono::duration_cast<chrono::milliseconds>(tt-t).count()>1000)
             {
                 t = tt;
-                cout << count << endl;
+                LOGGER(debug, "Last minute {} tests were done", count);
                 count = 0;
             }
             if (chrono::duration_cast<chrono::seconds>(tt-start).count() > 10)
@@ -105,8 +106,6 @@ TEST(LevelDbGraphTest, LevelDbGraphQuery)
             if (0==cnt)
             {
                 EXPECT_EQ(string("B"), it->getNode("b").id());
-                //cout << it->nodes.size() << endl;
-                //cout << it->nodes.begin()->first << endl;
                 EXPECT_EQ(string("E"), it->getEdge("e").id());
             }
             else
@@ -158,7 +157,7 @@ TEST(LevelDbGraphTest, LevelDbGraphInsertTest)
                             ).count() > 10)
                 break;
         Node n;
-        std::cout << std::to_string(cnt) << std::endl;
+        if (!(cnt % 10000)) LOGGER(debug, "Inserting {}", cnt);
         n.set_id(std::to_string(cnt));
         n.set_imp(cnt);
         g.setNode(n);
@@ -174,12 +173,12 @@ TEST(LevelDbGraphTest, LevelDbGraphInsertTest)
     auto ms = chrono::duration_cast<chrono::milliseconds>(
                 chrono::high_resolution_clock::now() - start
                 ).count();
-    cout << cnt << " insert takes "<<
-        ms << "ms, " << cnt * 1000.0 / ms <<"OP per second"<<endl;
+
+    LOGGER(info, "{} inserts takes {}ms, {} OP per second",cnt, ms, cnt * 1000.0 / ms);
 
     start = chrono::high_resolution_clock::now();
     cnt = 0;
-    g.getNode("2").PrintDebugString();
+    LOGGER(debug, g.getNode("2").DebugString());
     for(auto it = g.query("select (a)-->(b) return a,b"_graphsql);
                 it != g.end();
                 ++it)
@@ -189,8 +188,8 @@ TEST(LevelDbGraphTest, LevelDbGraphInsertTest)
                             chrono::high_resolution_clock::now() - start
                             ).count() > 10)
                 break;
-        it->getNode("a").PrintDebugString();
-        it->getNode("b").PrintDebugString();
+        LOGGER(debug, it->getNode("a").DebugString());
+        LOGGER(debug, it->getNode("b").DebugString());
         EXPECT_EQ((int)cnt, atoi(it->getNode("a").id().c_str()));
         EXPECT_EQ((int)(cnt+1), atoi(it->getNode("b").id().c_str()));
         ++cnt;
@@ -198,8 +197,8 @@ TEST(LevelDbGraphTest, LevelDbGraphInsertTest)
     ms = chrono::duration_cast<chrono::milliseconds>(
                 chrono::high_resolution_clock::now() - start
                 ).count();
-    cout << cnt <<" query takes "<<
-        ms << "ms, " << cnt * 1000.0 / ms <<"OP per second"<<endl;
+
+    LOGGER(info, "{} query takes {}ms, {} OP per second",cnt, ms, cnt * 1000.0 / ms);
     g.destroy();
 }
 
@@ -252,7 +251,7 @@ TEST(LevelDbGraphTest, LevelDbGraphSpeedTest)
             if (chrono::duration_cast<chrono::milliseconds>(tt-t).count()>1000)
             {
                 t = tt;
-                cout << count << endl;
+                LOGGER(debug, "Last second {} tests were done", count);
                 count = 0;
             }
             if (chrono::duration_cast<chrono::seconds>(tt-start).count() > 10)
@@ -355,7 +354,7 @@ TEST(LevelDbGraphTest, LevelDbDeductionStepsTest)
         EXPECT_FALSE(result[6].direct);
     } catch(netalgo::GraphSqlParseStateException& e)
     {
-        cout << e.getNearbyChars() << endl;
+        LOGGER(critical, e.getNearbyChars());
         throw;
     }
 }

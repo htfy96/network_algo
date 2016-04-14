@@ -1,6 +1,7 @@
 #ifndef BACKEND_LEVELDBGRAPH_HPP
 #define BACKEND_LEVELDBGRAPH_HPP
 
+#include "debug.hpp"
 #include "graph_interface.hpp"
 #include "utility.hpp"
 #include "typedmrumap.hpp"
@@ -425,6 +426,7 @@ namespace netalgo
         void LevelDbGraph<NodeType, EdgeType, true>::setNode(const NodeType& node)
         {
             stringSlice ssslice = dataToSliceByProtobuf(node);
+            LOGGER(trace, "Actual added id: {}", addSuffix(node.id(), nodeDataIdSuffix));
             //std::cout << "Actual added id:"<< addSuffix(node.id(), nodeDataIdSuffix) << std::endl;
             leveldb::Status status = this->db->Put(leveldb::WriteOptions(), addSuffix(node.id(), nodeDataIdSuffix), ssslice.getSlice());
             assert(status.ok());
@@ -446,6 +448,7 @@ namespace netalgo
             {
                 stringSlice ssslice = dataToSliceByProtobuf(node);
                 batch.Put(addSuffix(node.id(), nodeDataIdSuffix), ssslice.getSlice());
+                LOGGER(trace, "Actual added id: {}", addSuffix(node.id(), nodeDataIdSuffix));
                 //std::cout << "Put " << addSuffix(node.id(), nodeDataIdSuffix) << std::endl;
             }
             leveldb::Status status = this->db->Write(leveldb::WriteOptions(), &batch);

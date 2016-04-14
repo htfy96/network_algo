@@ -59,42 +59,44 @@ include_directories(NanoSQL)
 include_directories(cereal/include)
 include_directories(spdlog/include)
 
+set(DEBUG_SRC src/debug.cpp)
+
 if (${WITH_TESTS})
 
     include_directories(googletest/googletest/include)
     set(GTEST_SRC googletest/googletest/src/gtest_main.cc)
     set(GTEST_LIB gtest gtest_main)
 
-    add_executable(graphtest test/graphtest.cpp ${GTEST_SRC})
+    add_executable(graphtest test/graphtest.cpp ${GTEST_SRC} ${DEBUG_SRC})
     target_link_libraries(graphtest ${GTEST_LIB} soci_core soci_mysql)
 
     #add_executable(lazycachetest test/lazycachetest.cpp ${GTEST_SRC})
     #target_link_libraries(lazycachetest ${GTEST_LIB} soci_core soci_sqlite3)
 
-    add_executable(graph_interfacetest test/graph_interfacetest.cpp ${GTEST_SRC})
+    add_executable(graph_interfacetest test/graph_interfacetest.cpp ${GTEST_SRC} ${DEBUG_SRC})
     target_link_libraries(graph_interfacetest ${GTEST_LIB})
 
     protobuf_generate_cpp(LDGTESTPROTO_SRCS LDGTESTPROTO_HDRS test/leveldbgraphtest.proto)
-    add_executable(leveldbgraphtest test/leveldbgraphtest.cpp src/graphdsl.cpp ${GTEST_SRC} ${LDGTESTPROTO_SRCS} ${LDGTESTPROTO_HDRS})
+    add_executable(leveldbgraphtest test/leveldbgraphtest.cpp src/graphdsl.cpp ${GTEST_SRC} ${LDGTESTPROTO_SRCS} ${LDGTESTPROTO_HDRS} ${DEBUG_SRC})
     target_link_libraries(leveldbgraphtest ${PROTOBUF_LIBRARIES} ${GTEST_LIB} ${LEVELDB_LIBS} ${snappy_LIBRARIES})
 
     protobuf_generate_cpp(REFLECTIONTESTPROTO_SRCS REFLECTIONTESTPROTO_HDRS test/reflectiontest.proto)
-    add_executable(reflectiontest test/reflectiontest.cpp ${GTEST_SRC} ${REFLECTIONTESTPROTO_SRCS} ${REFLECTIONTESTPROTO_HDRS})
+    add_executable(reflectiontest test/reflectiontest.cpp ${GTEST_SRC} ${REFLECTIONTESTPROTO_SRCS} ${REFLECTIONTESTPROTO_HDRS} ${DEBUG_SRC})
     target_link_libraries(reflectiontest ${PROTOBUF_LIBRARIES} ${GTEST_LIB})
 
     protobuf_generate_cpp(TFLABELPROTO_SRCS TFLABELPROTO_HDRS include/algorithm/tflabel.proto)
-    add_executable(tflabeltest test/tflabeltest.cpp src/graphdsl.cpp ${GTEST_SRC} ${LDGTESTPROTO_SRCS} ${TFLABELPROTO_SRCS} ${TFLABELPROTO_HDRS})
+    add_executable(tflabeltest test/tflabeltest.cpp src/graphdsl.cpp ${GTEST_SRC} ${LDGTESTPROTO_SRCS} ${TFLABELPROTO_SRCS} ${TFLABELPROTO_HDRS} ${DEBUG_SRC})
     target_link_libraries(tflabeltest ${PROTOBUF_LIBRARIES} ${GTEST_LIB} ${LEVELDB_LIBS} ${snappy_LIBRARIES})
     file(COPY test/data.txt DESTINATION ${networkalgo_BINARY_DIR})
 
-    add_executable(typedmrumaptest test/typedmrumaptest.cpp ${GTEST_SRC})
+    add_executable(typedmrumaptest test/typedmrumaptest.cpp ${GTEST_SRC} ${DEBUG_SRC})
     target_link_libraries(typedmrumaptest ${GTEST_LIB})
 
-    add_executable(disksettest test/disksettest.cpp ${GTEST_SRC})
+    add_executable(disksettest test/disksettest.cpp ${GTEST_SRC} ${DEBUG_SRC})
     target_link_libraries(disksettest ${GTEST_LIB} ${LEVELDB_LIBS} ${snappy_LIBRARIES} ${PROTOBUF_LIBRARIES})
 
     if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
-        add_executable(graphdsltest test/graphdsltest.cpp ${GTEST_SRC})
+        add_executable(graphdsltest test/graphdsltest.cpp ${GTEST_SRC} ${DEBUG_SRC})
         target_link_libraries(graphdsltest ${GTEST_LIB})
     endif(${CMAKE_BUILD_TYPE} MATCHES "Debug")
 

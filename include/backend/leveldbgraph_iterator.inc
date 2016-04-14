@@ -2,6 +2,7 @@
 #define GRAPH_BACKEND_LEVELDBGRAPH_ITERATOR
 
 
+#include "debug.hpp"
 #include "graphdsl.hpp"
 #include "leveldbgraph_db_utility.inc"
 #include "leveldbgraph_deduction.inc"
@@ -171,7 +172,7 @@ namespace netalgo
         graph(graphP),
         BaseType(graphP.db, gs)
     {
-        //std::cout << "DeductionStepsSize:" << this->deductionSteps.size() << std::endl;
+        LOGGER(trace, "DeductionStepsSize: {}", this->deductionSteps.size());
         this->nodesId.resize(gs.first.nodes.size());
         this->edgesId.resize(gs.first.edges.size());
         this->nextNodesId.resize(gs.first.nodes.size());
@@ -189,7 +190,7 @@ namespace netalgo
     graph(graphP),
     BaseType(graphP.db, gs)
     {
-        //std::cout << "DeductionStepsSize:" << this->deductionSteps.size() << std::endl;
+        LOGGER(trace, "DeductionStepsSize: {}", this->deductionSteps.size());
         this->nodesId.resize(gs.first.nodes.size());
         this->edgesId.resize(gs.first.edges.size());
         this->nextNodesId.resize(gs.first.nodes.size());
@@ -769,26 +770,27 @@ namespace netalgo
                     {
                         std::unique_ptr<leveldb::Iterator> it ( this->db->NewIterator(leveldb::ReadOptions()) );
                         it->Seek(addSuffix(this->nodesId.at(getNodeIndex(id)), nodeDataIdSuffix));
-                        //std::cout << this->nodesId.at(getNodeIndex(id)) << " " << it->Valid() << std::endl;
-                        //std::cout << "  "<<it->key().ToString() << std::endl;
+                        LOGGER(trace, "In notConstrained Node condition, current node is {}, its validity is {}",
+                            this->nodesId.at(getNodeIndex(id)), it->Valid());
+                        LOGGER(trace, "Its key is {}", it->key().ToString());
                         it->Next();
-                        //if (it->Valid())std::cout << it->key().ToString() << std::endl;
+                        if (it->Valid()) LOGGER(trace, "After Next() the key becomes {}", it->key().ToString());
                         for(;
                                     it->Valid();
                                     it->Next())
                         {
-                            //std::cout << "visiting " << it->key().ToString() << std::endl;
+                            LOGGER(trace, "Iterating {}", it->key().ToString());
                             std::string key = it->key().ToString();
                             std::size_t pos = key.find(nodeDataIdSuffix);
                             if (pos != key.npos)
                             {
                                 this->nodesId.at(getNodeIndex(id)) = key.substr(0, pos);
-                                //std::cout << "key="<<key << std::endl;
+                                LOGGER(trace, "Find node {}", key);
                                 if (isSelfConstrained(id)) break;
                             }
                         }
                         bool valid = it->Valid();
-                        //std::cout << std::boolalpha << valid << std::endl;
+                        LOGGER(trace, "Validity = {}", valid);
                         return valid;
                         break;
                     } //notConstrainted
@@ -1178,7 +1180,7 @@ namespace netalgo
                                         it->Next())
                             {
                                 std::string key = it->key().ToString();
-                                //std::cout << "checking key " << key << std::endl;
+                                LOGGER(trace, "Checking key {}", key);
                                 std::size_t pos = key.find(nodeDataIdSuffix);
                                 if (pos != key.npos)
                                 {

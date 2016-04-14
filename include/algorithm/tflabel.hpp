@@ -1,3 +1,4 @@
+#include "debug.hpp"
 #include "graphdsl.hpp"
 #include "backend/leveldbgraph.hpp"
 #include<cstdio>
@@ -88,17 +89,15 @@ namespace netalgo
                 {
                     for (size_t i=0; i<8; ++i)
                     {
-                        cout << "label_in"<<i<<endl;
+                        LOGGER(info, "label_in[{}] = ", i);
                         for (const auto& item : label_in[i])
-                            cout << item <<" ";
-                        cout << endl;
+                            LOGGER(info, "item={}", item);
                     }
                     for (size_t i=0; i<8; ++i)
                     {
-                        cout << "label_out"<<i<<endl;
+                        LOGGER(info, "label_out[{}] = ", i);
                         for (const auto& item : label_out[i])
-                            cout << item <<" ";
-                        cout << endl;
+                            LOGGER(info, "item={}", item);
                     }
                 }
         };
@@ -161,26 +160,26 @@ namespace netalgo
         void TFLabel<GraphT>::read(){
             //freopen("data.txt","r",stdin);
             ifstream is("data.txt");
-            cout<<"start"<<endl; 
+            LOGGER(debug, "start");
             int x,y = 0;
             vector<pair<int,int> >E;
             vector<int>v;
             int same = 0; 
             while (is >> x >> y){
                 //if (x == y && x < 1000)cout<<x<<endl;
-                cout << "Read "<<x <<" "<<y << endl;
+                LOGGER(debug, "Read {} {}", x, y);
                 if (x == y)same++;
                 E.push_back(make_pair(x,y));
                 v.push_back(x);
                 v.push_back(y);
             }
             is.close();
-            cout<<"same:"<<same<<endl;
+            LOGGER(debug, "same:{}", same);
             sort(v.begin(),v.end());
             v.erase(unique(v.begin(), v.end()),v.end());
             tot = v.size();
 
-            cout<<v[0]<<' '<<v[tot-1]<<endl;
+            LOGGER(debug, "first node {}, last node {}", v[0], v[tot-1]);
             for (int i = 0; i < tot; ++i)
                 pre_to_new_NUM[v[i]] = i;
             for (size_t i = 0; i < E.size(); ++i)
@@ -189,9 +188,9 @@ namespace netalgo
                 int yy = pre_to_new_NUM[E[i].second];
                 GG[xx].push_back(yy);
             }
-            cout<<"start tarjan"<<endl;
+            LOGGER(debug, "Start Tarjan");
             find_scc(tot);//tarjan
-            cout<<"end tarjan"<<endl;	
+            LOGGER(debug, "End Tarjan");
             vector<Edge> edgeVec;
             vector<Node> nodeVec;
             for (int i = 0; i < tot; ++i){
@@ -199,8 +198,7 @@ namespace netalgo
                 x.set_id(to_string(i));
                 x.set_level(1);
                 nodeVec.push_back(x);
-                cout<<"#####"<<i<<endl;
-
+                LOGGER(debug, "#####{}", i);
             }
             graph.setNodesBundle(nodeVec);
             int cnt = 0;
@@ -209,7 +207,7 @@ namespace netalgo
                         ++it)
             {
                 ++cnt;
-                cout <<cnt << it->getNode("a").id() << endl;
+                LOGGER(debug, "{}.  {} is in graph", cnt, it->getNode("a").id());
             }
 
 
@@ -228,9 +226,7 @@ namespace netalgo
                 }
             graph.setEdgesBundle(edgeVec);
             tot = scc_cnt;
-            cout<<"tot="<<tot<<endl;
-
-
+            LOGGER(debug, "Tot={}", tot);
         }
 
     template<typename GraphT>
@@ -242,13 +238,13 @@ namespace netalgo
                     deg[G[i][j]]++;
                     ++cnt;
                 } 
-            cout<<cnt<<endl;
+            LOGGER(debug, "All edges: {}", cnt);
             cnt = 0;
             for (int i = 0; i < tot; ++i)
             {
                 if (deg[i] != 0)cnt++;
             }
-            printf("%d\n",cnt);
+            LOGGER(debug, "CNT = {}", cnt);
             queue<int>q;
             int sum = 0;
             for (int i = 0; i < tot; ++i)
@@ -278,15 +274,15 @@ namespace netalgo
                 }
             }
             TF = (int)(log(maxx)/log(2)) + 1;
-            cout<<cnt<<endl;
-            cout<<"average:"<<sum*1.0/tot<<endl;
-            cout<<"maxx:"<<maxx<<endl;
+            LOGGER(debug, "Count={}", cnt);
+            LOGGER(debug, "Average={}", sum*1.0/ tot);
+            LOGGER(debug, "MaxX={}", maxx);
             cnt = 0;
             for (int i = 0; i < tot; ++i)
             {
                 if (deg[i] > 0)cnt++;
             }
-            printf("%d\n",cnt);
+            LOGGER(debug, "Cnt = {}", cnt);
         }
 
 
@@ -316,12 +312,12 @@ namespace netalgo
                 for (auto it=start; it!=graph.end(); ++it) //iterates over result set
                 {
                     Node a = it->getNode("a");
-                    cout<<fuck++<<a.id()<<endl;
+                    LOGGER(debug, "{}. Fuck {}", fuck++, a.id());
                     a.set_level(tln[atoi(a.id().c_str())]);
                     graph.setNode(a);
                 }
             }
-            cout<<TF<<endl;
+            LOGGER(debug, "TF= {}", TF);
             for (int ii = 1; ii <= TF; ++ii){
                 //a***********************************************************a
                 {
@@ -329,7 +325,7 @@ namespace netalgo
                     for (auto it=start; it!=graph.end(); ++it) //iterates over result set
                     {
                         Node a = it->getNode("a");
-                        cout<<a.id()<<endl;
+                        LOGGER(debug, "Id= {}", a.id());
                         int curl = a.level();
                         if (curl % 2 == 0)continue;
                         set<string> outEdges = graph.getOutEdge(a.id());
@@ -449,7 +445,7 @@ namespace netalgo
                         ++it;
 
                         graph.removeNode(a.id());						
-                        std::cout << "removed" << a.id() << std::endl;
+                        LOGGER(debug, "{} was removed", a.id());
                     }    
                 }
             }	
