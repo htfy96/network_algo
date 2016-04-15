@@ -172,7 +172,7 @@ namespace netalgo
             NodeType getNode(const NodeIdType &nodeId);
             EdgeType getEdge(const EdgeIdType &edgeId);
         private:
-            TypedMRUMap<NodeIdType, inoutEdgesType > outEdgeCache, inEdgeCache;
+            impl::TypedMRUMap<NodeIdType, inoutEdgesType > outEdgeCache, inEdgeCache;
 
     };
 
@@ -222,7 +222,7 @@ namespace netalgo
                 NodeType getNode(const NodeIdType &nodeId);
                 EdgeType getEdge(const EdgeIdType &edgeId);
             private:
-                TypedMRUMap<NodeIdType, inoutEdgesType > outEdgeCache;
+                impl::TypedMRUMap<NodeIdType, inoutEdgesType > outEdgeCache;
         };
 
     template<typename NodeType, typename EdgeType>
@@ -242,7 +242,7 @@ namespace netalgo
         LevelDbGraph<NodeType, EdgeType, true>::LevelDbGraph(const std::string& filename,
                     std::size_t cacheSizeInMB): LevelDbGraphBase<NodeType, EdgeType>(
                             filename, cacheSizeInMB), inEdgeCache(edgeCacheSize),
-        outEdgeCache(edgeCacheSize)
+                    outEdgeCache(edgeCacheSize)
     {}
 
     template<typename NodeType, typename EdgeType>
@@ -554,7 +554,7 @@ namespace netalgo
                 setInEdge(e.to(), std::move(inSet), &batch);
             }
 
-            
+
             status = this->db->Write(leveldb::WriteOptions(), &batch);
             assert(status.ok());
         }
@@ -599,7 +599,7 @@ namespace netalgo
 
             status = this->db->Delete(leveldb::WriteOptions(), addSuffix(nodeId, nodeDataIdSuffix));
             assert(status.ok());
-    
+
             inoutEdgesType inSet = getInEdge(nodeId);
             for (auto& edgeId : inSet)
                 removeEdgeImpl(edgeId, false, true, &batch);
@@ -674,7 +674,7 @@ namespace netalgo
                 if (status.IsNotFound())
                     return;
                 EdgeType edge = strToDataByProtobuf<EdgeType>(raw);
-                
+
                 if (updateFromNode)
                 {
                     inoutEdgesType outEdges = getOutEdge(edge.from());

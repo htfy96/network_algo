@@ -9,6 +9,7 @@
 
 TEST(TypedMRUMapTest, getSizeTest)
 {
+    using namespace netalgo::impl;
     std::vector<int> v;
     v.reserve(42);
 
@@ -64,7 +65,7 @@ namespace
 TEST(TypedMRUMapTest, InsertSpeedTest)
 {
     using namespace std;
-    TypedMRUMap<int, int> m(1024);
+    netalgo::impl::TypedMRUMap<int, int> m(1024);
 
     cout << "Insert Speed Test" << endl;
     speedTest([&]() { m.insert(make_pair(rand(), rand())); });
@@ -73,7 +74,7 @@ TEST(TypedMRUMapTest, InsertSpeedTest)
 TEST(TypedMRUMapTest, MixedOpSpeedTest)
 {
     using namespace std;
-    TypedMRUMap<int, int> m(1024);
+    netalgo::impl::TypedMRUMap<int, int> m(1024);
 
     cout << "MixedOp Speed Test" << endl;
     speedTest([&] () {
