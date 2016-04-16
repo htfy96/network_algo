@@ -45,6 +45,7 @@ TEST(LevelDbGraphTest, LevelDbGraphAdd)
 TEST(LevelDbGraphTest, LevelDbGraphQuery)
 {
     using namespace netalgo;
+    using namespace netalgo::impl;
     LevelDbGraph<Node, Edge> g("yyy.db", 4);
     Node n;
     n.set_id("A");
@@ -126,6 +127,7 @@ TEST(LevelDbGraphTest, LevelDbGraphQuery)
 TEST(LevelDbGraphTest, LevelDbDeductionStepsTest2)
 {
     using namespace netalgo;
+    using namespace netalgo::impl;
     auto sql = "select (a)-->(b) return a,b"_graphsql;
     auto ded = generateDeductionSteps(sql);
     EXPECT_EQ(0u, ded[0].id);
@@ -322,6 +324,7 @@ TEST(LevelDbGraphTest, LevelDbDeductionStepsTest)
     {
         auto s = "select ()-[id=\"dsfsdf\"]-(c id=\"\")<--()-->(id=\"\") return c"_graphsql;
         using namespace netalgo;
+        using namespace netalgo::impl;
         auto result = generateDeductionSteps(s);
         EXPECT_EQ(7u, result.size());
 

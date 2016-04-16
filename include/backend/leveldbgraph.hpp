@@ -765,6 +765,7 @@ namespace netalgo
         typename LevelDbGraph<NodeType, EdgeType, false>::ResultType
         LevelDbGraph<NodeType, EdgeType, false>::query(const GraphSqlSentence& q)
         {
+            using namespace impl;
             throw std::runtime_error("Query not implemented yet");
             LevelDbGraphIterator<NodeType, EdgeType, false> it(*this);
             DeductionStepsType deductionSteps = generateDeductionSteps(q);

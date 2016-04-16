@@ -47,7 +47,7 @@ namespace netalgo
                 typedef value_type* pointer;
             protected:
                 GraphSqlSentence sql;
-                DeductionStepsType deductionSteps;
+                impl::DeductionStepsType deductionSteps;
                 LevelDbGraphResult<NodeType, EdgeType> result;
                 bool isEnd;
                 std::vector< NodeIdType > nodesId, nextNodesId;
@@ -55,7 +55,7 @@ namespace netalgo
                 leveldb::DB *db;
                 explicit LevelDbGraphIteratorBase(leveldb::DB *dbP,
                             const GraphSqlSentence& gs):
-                    db(dbP), sql(gs), deductionSteps(generateDeductionSteps(gs)),
+                    db(dbP), sql(gs), deductionSteps(impl::generateDeductionSteps(gs)),
                     isEnd(false) {}
                 LevelDbGraphIteratorBase() : db(nullptr) {}
                 virtual ~LevelDbGraphIteratorBase()
@@ -286,6 +286,7 @@ namespace netalgo
     auto LevelDbGraphIterator<NodeType, EdgeType, true>::
     operator*() -> reference
     {
+        using namespace impl;
         if (this->isEnd)
             throw std::runtime_error("* on a past-end leveldbGraph iterator is invalid");
         std::unordered_set< std::string > returnName;
@@ -320,6 +321,7 @@ namespace netalgo
     auto LevelDbGraphIterator<NodeType, EdgeType, false>::
     operator*() -> reference
     {
+        using namespace impl;
         if (this->isEnd)
             throw std::runtime_error("* on a past-end leveldbGraph iterator is invalid");
         std::unordered_set< std::string > returnName;
@@ -419,6 +421,7 @@ namespace netalgo
     template<typename NodeType, typename EdgeType>
     bool LevelDbGraphIterator<NodeType, EdgeType, true>::checkLeftConstrained(const std::size_t id)
     {
+        using namespace impl;
         if (isNode(id - 1)) // node - edge(*)
         {
             NodeIdType nodeId = this->nodesId.at(getNodeIndex(id - 1));
@@ -461,6 +464,7 @@ namespace netalgo
     template<typename NodeType, typename EdgeType>
     bool LevelDbGraphIterator<NodeType, EdgeType, false>::checkLeftConstrained(const std::size_t id)
     {
+        using namespace impl;
         if (isNode(id - 1)) // node - edge(*)
         {
             NodeIdType nodeId = this->nodesId.at(getNodeIndex(id - 1));
@@ -493,6 +497,7 @@ namespace netalgo
     template<typename NodeType, typename EdgeType>
     bool LevelDbGraphIterator<NodeType, EdgeType, true>::checkRightConstrained(const std::size_t id)
     {
+        using namespace impl;
         if (isNode(id + 1)) // edge(*) - node
         {
             NodeIdType nodeId = this->nodesId.at(getNodeIndex(id + 1));
@@ -535,6 +540,7 @@ namespace netalgo
     template<typename NodeType, typename EdgeType>
     bool LevelDbGraphIterator<NodeType, EdgeType, false>::checkRightConstrained(const std::size_t id)
     {
+        using namespace impl;
         if (isNode(id + 1)) // edge(*) - node
         {
             NodeIdType nodeId = this->nodesId.at(getNodeIndex(id + 1));
@@ -584,6 +590,7 @@ namespace netalgo
     template<typename NodeType, typename EdgeType>
     bool LevelDbGraphIterator<NodeType, EdgeType, true>::isSelfConstrained(const std::size_t id)
     {
+        using namespace impl;
         if (isNode(id))
         {
             NodeIdType nodeId = this->nodesId.at(getNodeIndex(id));
@@ -602,6 +609,7 @@ namespace netalgo
     template<typename NodeType, typename EdgeType>
     bool LevelDbGraphIterator<NodeType, EdgeType, false>::isSelfConstrained(const std::size_t id)
     {
+        using namespace impl;
         if (isNode(id))
         {
             NodeIdType nodeId = this->nodesId.at(getNodeIndex(id));
@@ -622,9 +630,10 @@ namespace netalgo
     hasNodeIdFoundBefore(const NodeIdType &nodeId,
                 const std::size_t dedIdx)
     {
+        using namespace impl;
         return std::find_if(deductionSteps.begin(),
                     deductionSteps.begin() + dedIdx,
-                    [&](const netalgo::DeductionTrait &dt)
+                    [&](const netalgo::impl::DeductionTrait &dt)
                     {
                     return isNode(dt.id) &&
                     this->nodesId.at(getNodeIndex(dt.id)) == nodeId;
@@ -638,7 +647,7 @@ namespace netalgo
     {
         return std::find_if(deductionSteps.begin(),
                     deductionSteps.end(),
-                    [&](const netalgo::DeductionTrait &dt)->bool
+                    [&](const netalgo::impl::DeductionTrait &dt)->bool
                     {
                     return dt.id == queryid;
                     }) - deductionSteps.begin();
@@ -648,6 +657,7 @@ namespace netalgo
     auto LevelDbGraphIterator<NodeType, EdgeType, true>::
     getNodeIdFromLeftEdge(const std::size_t nodeId) -> NodeIdType
     {
+        using namespace impl;
         EdgeType prevEdge = graph.getEdge(this->edgesId.at(getEdgeIndex(nodeId - 1)));
         netalgo::EdgeType queryEdge = this->sql.first.edges.at(getEdgeIndex(nodeId - 1));
         switch(queryEdge.direction)
@@ -668,6 +678,7 @@ namespace netalgo
     auto LevelDbGraphIterator<NodeType, EdgeType, false>::
     getNodeIdFromLeftEdge(const std::size_t nodeId) -> NodeIdType
     {
+        using namespace impl;
         EdgeType prevEdge = graph.getEdge(this->edgesId.at(getEdgeIndex(nodeId - 1)));
         netalgo::EdgeType queryEdge = this->sql.first.edges.at(getEdgeIndex(nodeId - 1));
         switch(queryEdge.direction)
@@ -691,6 +702,7 @@ namespace netalgo
     auto LevelDbGraphIterator<NodeType, EdgeType, true>::
     getNodeIdFromRightEdge(const std::size_t nodeId) -> NodeIdType
     {
+        using namespace impl;
         EdgeType nextEdge = graph.getEdge(this->edgesId.at(getEdgeIndex(nodeId + 1)));
         netalgo::EdgeType queryEdge = this->sql.first.edges.at(getEdgeIndex(nodeId + 1));
         switch(queryEdge.direction)
@@ -711,6 +723,7 @@ namespace netalgo
     auto LevelDbGraphIterator<NodeType, EdgeType, false>::
     getNodeIdFromRightEdge(const std::size_t nodeId) -> NodeIdType
     {
+        using namespace impl;
         EdgeType prevEdge = graph.getEdge(this->edgesId.at(getEdgeIndex(nodeId + 1)));
         netalgo::EdgeType queryEdge = this->sql.first.edges.at(getEdgeIndex(nodeId + 1));
         switch(queryEdge.direction)
@@ -733,8 +746,9 @@ namespace netalgo
     template<typename NodeType, typename EdgeType>
     bool LevelDbGraphIterator<NodeType, EdgeType, true>::findNextPossible(const int deductionIdx)
     {
+        using namespace impl;
         if (deductionIdx < 0) return false;
-        DeductionTrait d = this->deductionSteps[deductionIdx];
+        impl::DeductionTrait d = this->deductionSteps[deductionIdx];
         if (d.direct) return false;
 
         std::size_t id = d.id;
@@ -742,7 +756,7 @@ namespace netalgo
         {
             switch(d.constraint)
             {
-                case DeductionTrait::ConstraintType::leftConstrained:
+                case impl::DeductionTrait::ConstraintType::leftConstrained:
                     do
                     {
                         if (!findNextPossible(deductionIdx - 1)) return false;
@@ -750,7 +764,7 @@ namespace netalgo
                     } while (!isSelfConstrained(id));
                     break;
                     //leftConstrained
-                case DeductionTrait::ConstraintType::rightConstrained:
+                    case impl::DeductionTrait::ConstraintType::rightConstrained:
                     do
                     {
                         if (!findNextPossible(deductionIdx - 1)) return false;
@@ -758,7 +772,7 @@ namespace netalgo
                     } while (!isSelfConstrained(id));
                     break;
                     //rightConstrained
-                case DeductionTrait::ConstraintType::bothConstrained:
+                    case impl::DeductionTrait::ConstraintType::bothConstrained:
                     do
                     {
                         if (!findNextPossible(deductionIdx - 1)) return false;
@@ -766,7 +780,7 @@ namespace netalgo
                     } while (!isSelfConstrained(id) ||
                                 !checkRightConstrained(id)); //bothConstrained
                     break;
-                case DeductionTrait::ConstraintType::notConstrainted:
+                    case impl::DeductionTrait::ConstraintType::notConstrainted:
                     {
                         std::unique_ptr<leveldb::Iterator> it ( this->db->NewIterator(leveldb::ReadOptions()) );
                         it->Seek(addSuffix(this->nodesId.at(getNodeIndex(id)), nodeDataIdSuffix));
@@ -800,7 +814,7 @@ namespace netalgo
             EdgeType e = graph.getEdge(this->edgesId.at(getEdgeIndex(id)));
             switch(d.constraint)
             {
-                case netalgo::DeductionTrait::leftConstrained:
+                case netalgo::impl::DeductionTrait::leftConstrained:
                     {
                         netalgo::EdgeType edgeQuery =
                             this->sql.first.edges.at(getEdgeIndex(id));
@@ -834,7 +848,7 @@ namespace netalgo
                         break;
                     }
 
-                case netalgo::DeductionTrait::rightConstrained:
+                    case netalgo::impl::DeductionTrait::rightConstrained:
                     {
                         netalgo::EdgeType edgeQuery =
                             this->sql.first.edges.at(getEdgeIndex(id));
@@ -867,7 +881,7 @@ namespace netalgo
                         }
                         break;
                     } //right constrained
-                case netalgo::DeductionTrait::bothConstrained:
+                    case netalgo::impl::DeductionTrait::bothConstrained:
                     {
                         netalgo::EdgeType edgeQuery =
                             this->sql.first.edges.at(getEdgeIndex(id));
@@ -913,7 +927,7 @@ namespace netalgo
                         }
                         break;
                     } //bothConstrained
-                case netalgo::DeductionTrait::notConstrainted:
+                    case netalgo::impl::DeductionTrait::notConstrainted:
                     {
                         leveldb::Iterator *it = this->db->NewIterator(leveldb::ReadOptions());
                         for(it->Seek(addSuffix(e.id(),
@@ -941,8 +955,9 @@ namespace netalgo
     template<typename NodeType, typename EdgeType>
     bool LevelDbGraphIterator<NodeType, EdgeType, false>::findNextPossible(const int deductionIdx)
     {
+        using namespace impl;
         if (deductionIdx < 0) return false;
-        DeductionTrait d = this->deductionSteps[deductionIdx];
+        impl::DeductionTrait d = this->deductionSteps[deductionIdx];
         if (d.direct) return false;
 
         std::size_t id = d.id;
@@ -950,7 +965,7 @@ namespace netalgo
         {
             switch(d.constraint)
             {
-                case DeductionTrait::ConstraintType::leftConstrained:
+                case impl::DeductionTrait::ConstraintType::leftConstrained:
                     do
                     {
                         if (!findNextPossible(deductionIdx - 1)) return false;
@@ -958,7 +973,7 @@ namespace netalgo
                     } while (!isSelfConstrained(id));
                     break;
                     //leftConstrained
-                case DeductionTrait::ConstraintType::rightConstrained:
+                    case impl::DeductionTrait::ConstraintType::rightConstrained:
                     do
                     {
                         if (!findNextPossible(deductionIdx - 1)) return false;
@@ -966,7 +981,7 @@ namespace netalgo
                     } while (!isSelfConstrained(id));
                     break;
                     //rightConstrained
-                case DeductionTrait::ConstraintType::bothConstrained:
+                    case impl::DeductionTrait::ConstraintType::bothConstrained:
                     do
                     {
                         if (!findNextPossible(deductionIdx - 1)) return false;
@@ -974,7 +989,7 @@ namespace netalgo
                     } while (!isSelfConstrained(id) ||
                                 !checkRightConstrained(id)); //bothConstrained
                     break;
-                case DeductionTrait::ConstraintType::notConstrainted:
+                    case impl::DeductionTrait::ConstraintType::notConstrainted:
                     {
                         leveldb::Iterator *it = this->db->NewIterator(leveldb::ReadOptions());
                         for(it->Seek(addSuffix(this->nodesId.at(getNodeIndex(id)),
@@ -1001,7 +1016,7 @@ namespace netalgo
             EdgeType e = graph.getEdge(this->edgesId.at(getEdgeIndex(id)));
             switch(d.constraint)
             {
-                case netalgo::DeductionTrait::leftConstrained:
+                case netalgo::impl::DeductionTrait::leftConstrained:
                     {
                         netalgo::EdgeType edgeQuery =
                             this->sql.first.edges.at(getEdgeIndex(id));
@@ -1031,7 +1046,7 @@ namespace netalgo
                         break;
                     }
 
-                case netalgo::DeductionTrait::rightConstrained:
+                    case netalgo::impl::DeductionTrait::rightConstrained:
                     {
                         netalgo::EdgeType edgeQuery =
                             this->sql.first.edges.at(getEdgeIndex(id));
@@ -1060,7 +1075,7 @@ namespace netalgo
                         }
                         break;
                     } //right constrained
-                case netalgo::DeductionTrait::bothConstrained:
+                    case netalgo::impl::DeductionTrait::bothConstrained:
                     {
                         netalgo::EdgeType edgeQuery =
                             this->sql.first.edges.at(getEdgeIndex(id));
@@ -1098,7 +1113,7 @@ namespace netalgo
                         }
                         break;
                     } //bothConstrained
-                case netalgo::DeductionTrait::notConstrainted:
+                    case netalgo::impl::DeductionTrait::notConstrainted:
                     {
                         leveldb::Iterator *it = this->db->NewIterator(leveldb::ReadOptions());
                         for(it->Seek(addSuffix(e.id(),
@@ -1127,14 +1142,15 @@ namespace netalgo
     void LevelDbGraphIterator<NodeType, EdgeType, true>::
     searchPossible(std::size_t dedId)
     {
-        typedef netalgo::DeductionTrait::ConstraintType ConstraintType;
+        using namespace impl;
+        typedef netalgo::impl::DeductionTrait::ConstraintType ConstraintType;
         if (this->found) return;
         if (dedId >= this->deductionSteps.size())
         {
             this->found = true;
             return;
         }
-        DeductionTrait dt = this->deductionSteps.at(dedId);
+        impl::DeductionTrait dt = this->deductionSteps.at(dedId);
         std::size_t id = dt.id;
         if (isNode(id))
         {
@@ -1217,7 +1233,7 @@ namespace netalgo
             { // not direct
                 switch(dt.constraint)
                 {
-                    case DeductionTrait::leftConstrained:
+                    case impl::DeductionTrait::leftConstrained:
                         {
                             inoutEdgesType leftSet;
                             if (queryEdge.direction == EdgeDirection::next ||
@@ -1236,7 +1252,7 @@ namespace netalgo
                             }
                             return;
                         } //case leftConstrained
-                    case DeductionTrait::rightConstrained:
+                        case impl::DeductionTrait::rightConstrained:
                         {
                             inoutEdgesType rightSet;
                             if (queryEdge.direction == EdgeDirection::prev ||
@@ -1255,7 +1271,7 @@ namespace netalgo
                             }
                             return;
                         } //case rightConstrained
-                    case DeductionTrait::bothConstrained:
+                        case impl::DeductionTrait::bothConstrained:
                         {
                             inoutEdgesType leftSet, rightSet;
                             if (queryEdge.direction == EdgeDirection::next ||
@@ -1283,7 +1299,7 @@ namespace netalgo
                             }
                             return;
                         } //case bothConstrained
-                    case DeductionTrait::notConstrainted:
+                        case impl::DeductionTrait::notConstrainted:
                         {
                             leveldb::Iterator *it = this->db->NewIterator(leveldb::ReadOptions());
                             for(it->SeekToFirst();
@@ -1317,14 +1333,15 @@ namespace netalgo
     void LevelDbGraphIterator<NodeType, EdgeType, false>::
     searchPossible(std::size_t dedId)
     {
-        typedef netalgo::DeductionTrait::ConstraintType ConstraintType;
+        using namespace impl;
+        typedef netalgo::impl::DeductionTrait::ConstraintType ConstraintType;
         if (this->found) return;
         if (dedId >= this->deductionSteps.size())
         {
             this->found = true;
             return;
         }
-        DeductionTrait dt = this->deductionSteps.at(dedId);
+        impl::DeductionTrait dt = this->deductionSteps.at(dedId);
         std::size_t id = dt.id;
         if (isNode(id))
         {
@@ -1406,7 +1423,7 @@ namespace netalgo
             { // not direct
                 switch(dt.constraint)
                 {
-                    case DeductionTrait::leftConstrained:
+                    case impl::DeductionTrait::leftConstrained:
                         {
                             inoutEdgesType leftSet;
                             leftSet = this->graph.getOutEdge(this->nodesId.at(getNodeIndex(id - 1)));
@@ -1421,7 +1438,7 @@ namespace netalgo
                             }
                             return;
                         } //case leftConstrained
-                    case DeductionTrait::rightConstrained:
+                        case impl::DeductionTrait::rightConstrained:
                         {
                             inoutEdgesType rightSet;
                             rightSet = this->graph.getOutEdge(this->nodesId.at(getNodeIndex(id + 1)));
@@ -1436,7 +1453,7 @@ namespace netalgo
                             }
                             return;
                         } //case rightConstrained
-                    case DeductionTrait::bothConstrained:
+                        case impl::DeductionTrait::bothConstrained:
                         {
                             inoutEdgesType leftSet, rightSet;
                             leftSet = this->graph.getOutEdge(this->nodesId.at(getNodeIndex(id - 1)));
@@ -1456,7 +1473,7 @@ namespace netalgo
                             }
                             return;
                         } //case bothConstrained
-                    case DeductionTrait::notConstrainted:
+                        case impl::DeductionTrait::notConstrainted:
                         {
                             leveldb::Iterator *it = this->db->NewIterator(leveldb::ReadOptions());
                             for(it->SeekToFirst();

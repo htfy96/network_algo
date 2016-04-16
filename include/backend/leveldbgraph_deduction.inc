@@ -7,7 +7,7 @@
 #include <cstdint>
 namespace netalgo
 {
-	namespace
+	namespace impl
 	{
 		class DeductionSteps;
 		// 0: first node
