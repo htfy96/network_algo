@@ -1,25 +1,13 @@
 image: ubuntu:latest
 before_script:
+    - apt-get update; apt-get install -y libmysqlclient-dev cmake libsqlite3-dev libleveldb-dev libprotobuf-dev protobuf-compiler libsnappy-dev git cmake make g++
     - git submodule update --init --recursive
-    - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
-    - sudo apt-get -qq update
-    - sudo apt-get install -y libmysqlclient-dev cmake libsqlite3-dev libleveldb-dev libprotobuf-dev protobuf-compiler libsnappy-dev
-    - sudo apt-get install gcc-5 g++-5 -y
 
-variables:
-    - CXX: "g++-5"
-    - CC: "gcc-5"
-
-build:
+test:
     script:
         - mkdir build
         - cd build
         - cmake -DCMAKE_BUILD_TYPE=Debug ..
         - make
-    stage: build
-
-test:
-    script:
-        - cd build
         - ctest -G 'soci_.*' --output-on-failure
     stage: test
