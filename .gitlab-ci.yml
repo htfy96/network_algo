@@ -1,4 +1,4 @@
-image: ubuntu:latest
+image: htfy96/cpp-suite:latest
 before_script:
     - apt-get update; apt-get install -y libmysqlclient-dev cmake libsqlite3-dev libleveldb-dev libprotobuf-dev protobuf-compiler libsnappy-dev git cmake make g++
     - git submodule update --init --recursive
