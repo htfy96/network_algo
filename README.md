@@ -4,6 +4,8 @@ A fast, embedded network framework.
 
 *Still under development. The following building steps won't work now*
 
+ > **This project has been migrated to Gitlab for better buildbot and privacy protection.**: https://gitlab.com/htfy96/network_algo
+
 ##Build
 ```
 git clone --recursive https://github.com/htfy96/network_algo.git
