@@ -195,7 +195,7 @@ namespace netalgo
             vector<Node> nodeVec;
             for (int i = 0; i < tot; ++i){
                 Node x;
-                x.set_id(to_string(i));
+                x.set_id(to_string(sccno[i]-1));
                 x.set_level(1);
                 nodeVec.push_back(x);
                 LOGGER(debug, "#####{}", i);
@@ -312,18 +312,27 @@ namespace netalgo
                 for (auto it=start; it!=graph.end(); ++it) //iterates over result set
                 {
                     Node a = it->getNode("a");
-                    LOGGER(debug, "{}. Fuck {}", fuck++, a.id());
                     a.set_level(tln[atoi(a.id().c_str())]);
+                    LOGGER(debug, "{}. Fuck {} tln={}", fuck++, a.id(), tln[atoi(a.id().c_str())]);
                     graph.setNode(a);
                 }
             }
+
+            LOGGER(debug, "The outedges of #7");
+            for (const auto &item : graph.getOutEdge("7"))
+                LOGGER(debug, "    {}", item);
             LOGGER(debug, "TF= {}", TF);
+            for (int i = 0; i < tot; ++i){
+                label_in[i].insert(i);
+                label_out[i].insert(i);
+            }
             for (int ii = 1; ii <= TF; ++ii){
                 //a***********************************************************a
                 {
                     auto start = graph.query("select (a) return a"_graphsql); // return an iterator
                     for (auto it=start; it!=graph.end(); ++it) //iterates over result set
                     {
+                        LOGGER(debug, "Start iterating");
                         Node a = it->getNode("a");
                         LOGGER(debug, "Id= {}", a.id());
                         int curl = a.level();
@@ -334,6 +343,7 @@ namespace netalgo
                         Node n;
                         for (auto &e: outEdges)
                         {
+                            LOGGER(debug, "The Edge id is {}", e);
                             Node m = graph.getNode(graph.getEdge(e).to());
                             if (m.level() > curl + 1)
                             {
@@ -361,6 +371,7 @@ namespace netalgo
                         for (size_t i = 0; i < edge_remove.size(); ++i)
                             graph.removeEdge(edge_remove[i]);
                     }
+
                 }
                 //b**********************************************************************b
                 {
@@ -412,23 +423,31 @@ namespace netalgo
                     {
                         Node a = it->getNode("a");
                         int curl = a.level();
-                        if (curl % 2 == 0){ ++it; continue; }
+                        LOGGER(debug, "Curl = {}   a.id={}", curl, a.id());
+                        if (curl % 2 == 0){ a.set_level(curl / 2); graph.setNode(a); ++it; continue; }
                         set<string> inEdges = graph.getInEdge(a.id());			
                         set<string> outEdges = graph.getOutEdge(a.id());
                         set<string> inNode;
                         set<string> outNode;
                         int x = findfa(a.id());
+                        LOGGER(debug, "x={}", x);
+                       // label_in[x].insert(x);
+                       // label_out[x].insert(x);
                         for (auto &e: outEdges)
                         {
                             string to = graph.getEdge(e).to();
                             outNode.insert(to);
-                            label_in[x].insert(findfa(to));		
+                            int y = findfa(to);
+                            for (auto &ele: label_in[y])
+                            label_in[x].insert(ele);		
                         }
                         for (auto &e: inEdges)
                         {
                             string from = graph.getEdge(e).from();
-                            inNode.insert(from);			
-                            label_out[x].insert(findfa(from));
+                            inNode.insert(from);	
+                            int y = findfa(from);
+                            for (auto &ele: label_out[y])
+                            label_out[x].insert(ele);
                         }
                         //¼Ólabel 
                         vector<Edge>edgeVec;
@@ -438,6 +457,7 @@ namespace netalgo
                                 nm.set_id(from+"-"+to);
                                 nm.set_from(from);
                                 nm.set_to(to);
+                                LOGGER(debug, "Add edge from {} to {}", from, to);
                                 edgeVec.push_back(nm);					
                             }
                         }
@@ -445,8 +465,23 @@ namespace netalgo
                         ++it;
 
                         graph.removeNode(a.id());						
+                        LOGGER(debug, "ii= {}", ii);
                         LOGGER(debug, "{} was removed", a.id());
                     }    
+                }
+                {
+                    for (auto ite = graph.query("select (a) return a"_graphsql);
+                                ite != graph.end();
+                                ++ite)
+                    {
+                        for (const auto & item : graph.getOutEdge(
+                                        ite->getNode("a").id()
+                                        ))
+                        {
+                            LOGGER(debug, " all edge include: {}",
+                                        item);
+                        }
+                    }
                 }
             }	
         }

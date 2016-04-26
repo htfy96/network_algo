@@ -747,8 +747,12 @@ namespace netalgo
     bool LevelDbGraphIterator<NodeType, EdgeType, true>::findNextPossible(const int deductionIdx)
     {
         using namespace impl;
+        LOGGER(trace, "FindNextPossible on directedGraph, at dedPos {}, the real pos is {}", deductionIdx, deductionIdx >=0 ? 
+            this->deductionSteps[deductionIdx].id : -1);
         if (deductionIdx < 0) return false;
         impl::DeductionTrait d = this->deductionSteps[deductionIdx];
+        LOGGER(trace, "Its DedTrait: id={}, isNode={}, constraint={}",
+            d.id, isNode(d.id), d.constraint);
         if (d.direct) return false;
 
         std::size_t id = d.id;
@@ -782,31 +786,43 @@ namespace netalgo
                     break;
                     case impl::DeductionTrait::ConstraintType::notConstrainted:
                     {
+                        bool firstvisit = true;
                         std::unique_ptr<leveldb::Iterator> it ( this->db->NewIterator(leveldb::ReadOptions()) );
-                        it->Seek(addSuffix(this->nodesId.at(getNodeIndex(id)), nodeDataIdSuffix));
-                        LOGGER(trace, "In notConstrained Node condition, current node is {}, its validity is {}",
-                            this->nodesId.at(getNodeIndex(id)), it->Valid());
-                        LOGGER(trace, "Its key is {}", it->key().ToString());
-                        it->Next();
-                        if (it->Valid()) LOGGER(trace, "After Next() the key becomes {}", it->key().ToString());
-                        for(;
-                                    it->Valid();
-                                    it->Next())
+                        for (;;)
                         {
-                            LOGGER(trace, "Iterating {}", it->key().ToString());
-                            std::string key = it->key().ToString();
-                            std::size_t pos = key.find(nodeDataIdSuffix);
-                            if (pos != key.npos)
+                            if (firstvisit)
                             {
-                                this->nodesId.at(getNodeIndex(id)) = key.substr(0, pos);
-                                LOGGER(trace, "Find node {}", key);
-                                if (isSelfConstrained(id)) break;
+                                it->Seek(addSuffix(this->nodesId.at(getNodeIndex(id)), nodeDataIdSuffix));
+                                LOGGER(trace, "In notConstrained Node condition, current node is {}, its validity is {}", this->nodesId.at(getNodeIndex(id)), it->Valid());
+                                LOGGER(trace, "Its key is {}", it->key().ToString());
+                                it->Next();
+                                if (it->Valid()) LOGGER(trace, "After Next() the key becomes {}", it->key().ToString());
+                            } else
+                            {
+                                it->SeekToFirst();
+                                LOGGER(trace, "Seek To First!");
                             }
+                            firstvisit = false;
+                            for(; it->Valid(); it->Next())
+                            {
+                                LOGGER(trace, "Iterating {}", it->key().ToString());
+                                std::string key = it->key().ToString();
+                                std::size_t pos = key.find(nodeDataIdSuffix);
+                                if (pos != key.npos)
+                                {
+                                    this->nodesId.at(getNodeIndex(id)) = key.substr(0, pos);
+                                    LOGGER(trace, "Find node {}", key);
+                                    if (isSelfConstrained(id)) break;
+                                }
+                            }
+                            bool valid = it->Valid();
+                            if (!valid)
+                            {
+                                if (!findNextPossible(deductionIdx - 1)) return false;
+                            }
+                            LOGGER(trace, "Validity = {}", valid);
+                            if (valid) return true;
                         }
-                        bool valid = it->Valid();
-                        LOGGER(trace, "Validity = {}", valid);
-                        return valid;
-                        break;
                     } //notConstrainted
             } // switch(d.constraint)
         } else //!isNode
@@ -899,6 +915,17 @@ namespace netalgo
                                 edgesSet2 = this->graph.getOutEdge(this->nodesId.at(getNodeIndex(id + 1)));
                             else
                                 edgesSet2 = this->graph.getInEdge(this->nodesId.at(getNodeIndex(id + 1)));
+                            
+                            LOGGER(trace, "Previous NodeId = {}",
+                                this->nodesId.at(getNodeIndex(id-1)));
+                            for (const auto& item :edgesSet1)
+                                LOGGER(trace, "  Related edgeId={}", item);
+
+                            LOGGER(trace, "Next NodeID = {}",
+                                this->nodesId.at(getNodeIndex(id+1)));
+                            for (const auto &item : edgesSet2)
+                                LOGGER(trace, "  Related EdgeId={}", item);
+
                             std::vector<EdgeIdType> intersectEdgesSet;
                             std::set_intersection(edgesSet1.begin(),
                                         edgesSet1.end(),
@@ -906,6 +933,11 @@ namespace netalgo
                                         edgesSet2.end(),
                                         std::back_inserter(intersectEdgesSet)
                                         );
+
+                            LOGGER(trace, "Iterating intersected edge set");
+                            for (const auto & item : intersectEdgesSet)
+                                LOGGER(trace, "  id={}", item);
+
                             if (firsttime)
                                 for (auto it = std::find(intersectEdgesSet.begin(),
                                                 intersectEdgesSet.end(), e.id());

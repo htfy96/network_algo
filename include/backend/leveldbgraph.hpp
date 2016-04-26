@@ -324,6 +324,7 @@ namespace netalgo
         NodeType
         LevelDbGraph<NodeType, EdgeType, true>::getNode(const NodeIdType& nodeId)
         {
+            LOGGER(trace, "Get NodeId = {}", nodeId);
             std::string s;
             assert(this->db->Get(leveldb::ReadOptions(), addSuffix(nodeId, nodeDataIdSuffix), &s)
                         .ok());
@@ -602,11 +603,11 @@ namespace netalgo
 
             inoutEdgesType inSet = getInEdge(nodeId);
             for (auto& edgeId : inSet)
-                removeEdgeImpl(edgeId, false, true, &batch);
+                removeEdgeImpl(edgeId, true, false, &batch);
 
             inoutEdgesType outSet = getOutEdge(nodeId);
             for (auto& edgeId : outSet)
-                removeEdgeImpl(edgeId, true, false, &batch);
+                removeEdgeImpl(edgeId, false, true, &batch);
 
             status = this->db->Write(leveldb::WriteOptions(), &batch);
             assert(status.ok());

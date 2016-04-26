@@ -150,7 +150,7 @@ TEST(LevelDbGraphTest, LevelDbGraphInsertTest)
 
     auto start = chrono::high_resolution_clock::now();
     std::size_t cnt = 0;
-    for (cnt=0; cnt<1000000; ++cnt)
+    for (cnt=0; cnt<5; ++cnt)
     {
         int i = cnt;
         if (!(cnt % 1000))
@@ -159,7 +159,7 @@ TEST(LevelDbGraphTest, LevelDbGraphInsertTest)
                             ).count() > 10)
                 break;
         Node n;
-        if (!(cnt % 10000)) LOGGER(debug, "Inserting {}", cnt);
+        if (true) LOGGER(debug, "Inserting {}", cnt);
         n.set_id(std::to_string(cnt));
         n.set_imp(cnt);
         g.setNode(n);
