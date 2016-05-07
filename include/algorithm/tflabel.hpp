@@ -340,7 +340,7 @@ namespace netalgo
                     {
                         LOGGER(debug, "Start iterating");
                         Node a = it->getNode("a");
-                        int x = getfa(a.id());
+                        int x = findfa(a.id());
                         LOGGER(debug, "Id= {}", a.id());
                         int curl = a.level();
                         if (curl % 2 == 0)continue;
@@ -387,7 +387,7 @@ namespace netalgo
                     for (auto it=start; it!=graph.end(); ++it) //iterates over result set
                     {
                         Node a = it->getNode("a");
-                        int x = getfa(a.id());
+                        int x = findfa(a.id());
                         int curl = a.level();
                         if (curl % 2 == 0)continue;
                         set<string> inEdges = graph.getInEdge(a.id());
