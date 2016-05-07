@@ -473,7 +473,7 @@ namespace netalgo
                         }
                         graph.setEdgesBundle(edgeVec);
                         ++it;
-                        order.push_back(a.id());
+                        order.push_back(findfa(a.id()));
                         graph.removeNode(a.id());						
                         LOGGER(debug, "ii= {}", ii);
                         LOGGER(debug, "{} was removed", a.id());
