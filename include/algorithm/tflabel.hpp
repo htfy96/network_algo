@@ -55,6 +55,7 @@ namespace netalgo
                     graph.destroy();
                     pre_to_new_NUM = new int [maxN];
                     tln = new int[maxn];
+                    fa = new int[maxn];
                     pre = new int[maxn];
                     lowlink = new int[maxn];
                     sccno = new int[maxn];
@@ -109,10 +110,10 @@ namespace netalgo
             construct();
         }
     //ieeepaper
-    //最大编号：7102531 最小编号：15 总边数：10600587
-    //总结点数：22309488
+    //æœ€å¤§ç¼–å·ï¼š7102531 æœ€å°ç¼–å·ï¼š15 æ€»è¾¹æ•°ï¼š10600587
+    //æ€»ç»“ç‚¹æ•°ï¼š22309488
     //int fa[maxn*4];
-    //***************************************tarjan算法求强连通分量********************************//
+    //***************************************tarjanç®—æ³•æ±‚å¼ºè¿žé€šåˆ†é‡********************************//
     template<typename GraphT>
         void TFLabel<GraphT>::dfs(int u)  
         {  
@@ -154,7 +155,7 @@ namespace netalgo
             for(int i=0; i<n; i++)  
                 if(!pre[i]) dfs(i);  
         } 
-    //***************************************tarjan算法求强连通分量********************************//
+    //***************************************tarjanç®—æ³•æ±‚å¼ºè¿žé€šåˆ†é‡********************************//
 
     template<typename GraphT>
         void TFLabel<GraphT>::read(){
@@ -226,6 +227,9 @@ namespace netalgo
                 }
             graph.setEdgesBundle(edgeVec);
             tot = scc_cnt;
+            for (int i = 0; i < tot; ++i){
+                fa[i] = i;
+            }
             LOGGER(debug, "Tot={}", tot);
         }
 
@@ -326,6 +330,7 @@ namespace netalgo
                 label_in[i].insert(i);
                 label_out[i].insert(i);
             }
+            vector<int>order;
             for (int ii = 1; ii <= TF; ++ii){
                 //a***********************************************************a
                 {
@@ -334,6 +339,7 @@ namespace netalgo
                     {
                         LOGGER(debug, "Start iterating");
                         Node a = it->getNode("a");
+                        int x = getfa(a.id());
                         LOGGER(debug, "Id= {}", a.id());
                         int curl = a.level();
                         if (curl % 2 == 0)continue;
@@ -350,7 +356,8 @@ namespace netalgo
                                 if (!flag){
                                     flag = 1;
                                     n = a;
-                                    string name = a.id() + "#";
+                                    fa[tot] = fa[x];
+                                    string name = to_string(tot++);
                                     n.set_id(name);
                                     n.set_level(a.level() + 1);
                                     graph.setNode(n);		        		
@@ -379,6 +386,7 @@ namespace netalgo
                     for (auto it=start; it!=graph.end(); ++it) //iterates over result set
                     {
                         Node a = it->getNode("a");
+                        int x = getfa(a.id());
                         int curl = a.level();
                         if (curl % 2 == 0)continue;
                         set<string> inEdges = graph.getInEdge(a.id());
@@ -394,7 +402,8 @@ namespace netalgo
                                 if (!flag){
                                     flag = 1;
                                     n = a;
-                                    string name = a.id() + "#";
+                                    fa[tot] = fa[x];
+                                    string name = to_string(tot++);
                                     n.set_id(name);
                                     n.set_level(a.level() - 1);
                                     graph.setNode(n);		        		
@@ -449,7 +458,7 @@ namespace netalgo
                             for (auto &ele: label_out[y])
                             label_out[x].insert(ele);
                         }
-                        //��label 
+                        //¼Ólabel 
                         vector<Edge>edgeVec;
                         for (auto &to: outNode){
                             for (auto &from: inNode){
@@ -463,12 +472,46 @@ namespace netalgo
                         }
                         graph.setEdgesBundle(edgeVec);
                         ++it;
-
+                        order.push_back(a.id());
                         graph.removeNode(a.id());						
                         LOGGER(debug, "ii= {}", ii);
                         LOGGER(debug, "{} was removed", a.id());
                     }    
                 }
+                {
+                    for (int i = order.size() - 1; i >= 0; --i)
+                    {
+                        set<int>tmp = label_in[i];
+                        for (auto &ele: tmp)
+                        {
+                            for (auto &e: label_in[ele])
+                            label_in[i].insert(e);
+                        }
+                        tmp = label_out[i];
+                        for (auto &ele: tmp)
+                        {
+                            for (auto &e: label_out[ele])
+                            label_out[i].insert(e);
+                        }
+                    }
+                }
+                {
+                    for (int i = 0; i < scc_cnt; ++i)
+                    {
+                        set<int>tmp;
+                        swap(tmp,label_in[i]);
+                        for (auto &ele:tmp){
+                            label_in[i].insert(fa[ele]);
+                        }
+                        set<int>tmp2;
+                        swap(tmp2,label_out[i]);
+                        for (auto &ele:tmp2){
+                            label_out[i].insert(fa[ele]);
+                        }
+                    }
+                    
+                }
+                
                 {
                     for (auto ite = graph.query("select (a) return a"_graphsql);
                                 ite != graph.end();
