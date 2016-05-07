@@ -36,6 +36,7 @@ namespace netalgo
                 set<int> *label_in, *label_out;
                 int* pre_to_new_NUM;
                 int* tln;
+                int* fa;
                 int tot;
                 int TF;
                 LevelDbGraph<Node, Edge> graph;
