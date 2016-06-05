@@ -108,7 +108,7 @@ function(apt_install_pkg_ pkg)
         set(autoconfirmcmd -y)
     endiF()
 
-    execute_process(COMMAND sudo apt-get install -S ${autoconfirmcmd} ${pkg} RESULT_VARIABLE install_failed)
+    execute_process(COMMAND sudo apt-get install ${autoconfirmcmd} ${pkg} RESULT_VARIABLE install_failed)
     if (install_failed)
         message(WARNING "${pkg} install failed")
         set(INSTALL_FILE_FAILED 1 PARENT_SCOPE)
