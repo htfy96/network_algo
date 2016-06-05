@@ -28,6 +28,8 @@
 
 ##########################################################################
 
+include (filepkg)
+INSTALL_FILE(/mysql/mysql.h)
 
 #-------------- FIND MYSQL_INCLUDE_DIR ------------------
 FIND_PATH(MYSQL_INCLUDE_DIR mysql.h

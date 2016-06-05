@@ -2,6 +2,17 @@ cmake_minimum_required(VERSION 2.8)
 project (networkalgo)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+set(USE_COTIRE_PCH ON CACHE BOOL "Use cotire to speed up compilation(Python required)")
+
+if (USE_COTIRE_PCH)
+    include(cotire)
+    macro(use_pch target_)
+        cotire(${target_})
+    endmacro(use_pch)
+else(USE_COTIRE_PCH)
+    macro(use_pch target_)
+    endmacro(use_pch)
+endif(USE_COTIRE_PCH)
 
 set(COMMON_MINIMUM_GCC_VERSION 5.0)
 include(Compiler)
@@ -67,37 +78,45 @@ if (${WITH_TESTS})
     set(GTEST_SRC googletest/googletest/src/gtest_main.cc)
     set(GTEST_LIB gtest gtest_main)
 
-    add_executable(graphtest test/graphtest.cpp ${GTEST_SRC} ${DEBUG_SRC})
+    add_executable(graphtest test/graphtest.cpp ${GTEST_SRC} ${DEBUG_SRC} include/graph.hpp)
     target_link_libraries(graphtest ${GTEST_LIB} soci_core soci_mysql)
+    use_pch(graphtest)
 
     #add_executable(lazycachetest test/lazycachetest.cpp ${GTEST_SRC})
     #target_link_libraries(lazycachetest ${GTEST_LIB} soci_core soci_sqlite3)
 
-    add_executable(graph_interfacetest test/graph_interfacetest.cpp ${GTEST_SRC} ${DEBUG_SRC})
+    add_executable(graph_interfacetest test/graph_interfacetest.cpp ${GTEST_SRC} ${DEBUG_SRC} include/graph_interface.hpp)
     target_link_libraries(graph_interfacetest ${GTEST_LIB})
+    use_pch(graph_interfacetest)
 
     protobuf_generate_cpp(LDGTESTPROTO_SRCS LDGTESTPROTO_HDRS test/leveldbgraphtest.proto)
-    add_executable(leveldbgraphtest test/leveldbgraphtest.cpp src/graphdsl.cpp ${GTEST_SRC} ${LDGTESTPROTO_SRCS} ${LDGTESTPROTO_HDRS} ${DEBUG_SRC})
+    add_executable(leveldbgraphtest test/leveldbgraphtest.cpp src/graphdsl.cpp ${GTEST_SRC} ${LDGTESTPROTO_SRCS} ${LDGTESTPROTO_HDRS} ${DEBUG_SRC} include/backend/leveldbgraph.hpp include/graphdsl.hpp)
     target_link_libraries(leveldbgraphtest ${PROTOBUF_LIBRARIES} ${GTEST_LIB} ${LEVELDB_LIBS} ${snappy_LIBRARIES})
+    use_pch(leveldbgraphtest)
 
     protobuf_generate_cpp(REFLECTIONTESTPROTO_SRCS REFLECTIONTESTPROTO_HDRS test/reflectiontest.proto)
-    add_executable(reflectiontest test/reflectiontest.cpp ${GTEST_SRC} ${REFLECTIONTESTPROTO_SRCS} ${REFLECTIONTESTPROTO_HDRS} ${DEBUG_SRC})
+    add_executable(reflectiontest test/reflectiontest.cpp ${GTEST_SRC} ${REFLECTIONTESTPROTO_SRCS} ${REFLECTIONTESTPROTO_HDRS} ${DEBUG_SRC} include/reflection.hpp include/debug.hpp include/graphdsl.hpp)
     target_link_libraries(reflectiontest ${PROTOBUF_LIBRARIES} ${GTEST_LIB})
+    use_pch(reflectiontest)
 
     protobuf_generate_cpp(TFLABELPROTO_SRCS TFLABELPROTO_HDRS include/algorithm/tflabel.proto)
-    add_executable(tflabeltest test/tflabeltest.cpp src/graphdsl.cpp ${GTEST_SRC} ${LDGTESTPROTO_SRCS} ${TFLABELPROTO_SRCS} ${TFLABELPROTO_HDRS} ${DEBUG_SRC})
+    add_executable(tflabeltest test/tflabeltest.cpp src/graphdsl.cpp ${GTEST_SRC} ${LDGTESTPROTO_SRCS} ${TFLABELPROTO_SRCS} ${TFLABELPROTO_HDRS} ${DEBUG_SRC} include/backend/leveldbgraph.hpp include/algorithm/tflabel.hpp)
     target_link_libraries(tflabeltest ${PROTOBUF_LIBRARIES} ${GTEST_LIB} ${LEVELDB_LIBS} ${snappy_LIBRARIES})
+    use_pch(tflabeltest)
     file(COPY test/data.txt DESTINATION ${networkalgo_BINARY_DIR})
 
-    add_executable(typedmrumaptest test/typedmrumaptest.cpp ${GTEST_SRC} ${DEBUG_SRC})
+    add_executable(typedmrumaptest test/typedmrumaptest.cpp ${GTEST_SRC} ${DEBUG_SRC} include/typedmrumap.hpp)
     target_link_libraries(typedmrumaptest ${GTEST_LIB})
+    use_pch(typedmrumaptest)
 
     add_executable(disksettest test/disksettest.cpp ${GTEST_SRC} ${DEBUG_SRC})
-    target_link_libraries(disksettest ${GTEST_LIB} ${LEVELDB_LIBS} ${snappy_LIBRARIES} ${PROTOBUF_LIBRARIES})
+    target_link_libraries(disksettest ${GTEST_LIB} ${LEVELDB_LIBS} ${snappy_LIBRARIES} ${PROTOBUF_LIBRARIES} include/diskset.hpp)
+    use_pch(disksettest)
 
     if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
-        add_executable(graphdsltest test/graphdsltest.cpp ${GTEST_SRC} ${DEBUG_SRC})
+        add_executable(graphdsltest test/graphdsltest.cpp ${GTEST_SRC} ${DEBUG_SRC} include/graphdsl.hpp)
         target_link_libraries(graphdsltest ${GTEST_LIB})
+        use_pch(graphdsltest)
     endif(${CMAKE_BUILD_TYPE} MATCHES "Debug")
 
 # ----------------

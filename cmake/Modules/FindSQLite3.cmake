@@ -21,6 +21,9 @@
 
 # try to use framework on mac
 # want clean framework path, not unix compatibility path
+include (filepkg)
+INSTALL_FILE(/sqlite3.h)
+
 IF (APPLE)
   IF (CMAKE_FIND_FRAMEWORK MATCHES "FIRST"
       OR CMAKE_FRAMEWORK_PATH MATCHES "ONLY"

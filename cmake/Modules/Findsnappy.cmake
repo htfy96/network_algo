@@ -12,6 +12,9 @@
 #   snappy_ROOT - The root directory where to find snappy. If this is not
 #                 set, the default paths are searched.
 
+include (filepkg)
+INSTALL_FILE(/snappy.h)
+
 if(NOT snappy_ROOT)
     find_path(snappy_INCLUDE_DIRS snappy.h)
     find_library(snappy_LIBRARIES NAMES snappy)

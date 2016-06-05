@@ -5,6 +5,8 @@
 #  LEVELDB_FOUND   - True if LevelDB found.
 
 get_filename_component(module_file_path ${CMAKE_CURRENT_LIST_FILE} PATH)
+include (filepkg)
+INSTALL_FILE(/leveldb/db.h)
 
 # Look for the header file.
 find_path(LEVELDB_INCLUDE NAMES leveldb/db.h PATHS $ENV{LEVELDB_ROOT}/include /opt/local/include /usr/local/include /usr/include DOC "Path in which the file leveldb/db.h is located." )
